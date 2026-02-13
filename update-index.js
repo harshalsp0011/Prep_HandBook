@@ -4,6 +4,7 @@ const path = require('path');
 // Configuration
 const COMPONENTS_DIR = path.join(__dirname, 'components');
 const INDEX_FILE = path.join(__dirname, 'index.html');
+const ROOT_CATEGORY = 'General';
 
 // Icon mapping based on keywords in filename
 const getIconForComponent = (filename) => {
@@ -30,6 +31,16 @@ const filenameToTitle = (filename) => {
         .replace(/_/g, ' ')
         .replace(/-/g, ' ')
         .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+};
+
+const folderNameToTitle = (folderName) => {
+    return folderName
+        .replace(/_/g, ' ')
+        .replace(/-/g, ' ')
+        .split(' ')
+        .filter(Boolean)
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
 };
@@ -72,17 +83,43 @@ const scanComponents = () => {
             return [];
         }
 
-        const files = fs.readdirSync(COMPONENTS_DIR);
-        const htmlFiles = files.filter(file => file.endsWith('.html'));
-        
-        return htmlFiles.map(file => ({
-            filename: file,
-            path: `components/${file}`,
-            title: filenameToTitle(file),
-            icon: getIconForComponent(file),
-            description: generateDescription(file),
-            tag: generateTag(file)
-        }));
+        const entries = fs.readdirSync(COMPONENTS_DIR, { withFileTypes: true });
+        const components = [];
+
+        entries.forEach(entry => {
+            if (entry.isDirectory()) {
+                const category = folderNameToTitle(entry.name);
+                const categoryDir = path.join(COMPONENTS_DIR, entry.name);
+                const files = fs.readdirSync(categoryDir).filter(file => file.endsWith('.html'));
+
+                files.forEach(file => {
+                    components.push({
+                        filename: file,
+                        path: `components/${entry.name}/${file}`,
+                        title: filenameToTitle(file),
+                        icon: getIconForComponent(file),
+                        description: generateDescription(file),
+                        tag: generateTag(file),
+                        category
+                    });
+                });
+                return;
+            }
+
+            if (entry.isFile() && entry.name.endsWith('.html')) {
+                components.push({
+                    filename: entry.name,
+                    path: `components/${entry.name}`,
+                    title: filenameToTitle(entry.name),
+                    icon: getIconForComponent(entry.name),
+                    description: generateDescription(entry.name),
+                    tag: generateTag(entry.name),
+                    category: ROOT_CATEGORY
+                });
+            }
+        });
+
+        return components;
     } catch (error) {
         console.error('Error scanning components:', error);
         return [];
@@ -91,7 +128,7 @@ const scanComponents = () => {
 
 // Generate card HTML
 const generateCardHTML = (component) => {
-    return `            <a href="${component.path}" class="card" data-search-content="">
+    return `            <a href="${component.path}" class="card" data-search-content="" data-category="${component.category}">
                 <span class="card-icon">${component.icon}</span>
                 <div class="card-title">${component.title}</div>
                 <p class="card-description">${component.description}</p>
@@ -102,6 +139,21 @@ const generateCardHTML = (component) => {
                     <span class="card-tag">${component.tag}</span>
                 </div>
             </a>`;
+};
+
+const generateSectionHTML = (category, components) => {
+    const cardsHTML = components.map(generateCardHTML).join('\n');
+    const countLabel = components.length === 1 ? '1 topic' : `${components.length} topics`;
+
+    return `            <div class="topic-section" data-category="${category}">
+                <div class="topic-header">
+                    <h3 class="topic-title">${category}</h3>
+                    <span class="topic-count">${countLabel}</span>
+                </div>
+                <div class="cards-grid topic-grid">
+${cardsHTML}
+                </div>
+            </div>`;
 };
 
 // Update index.html
@@ -121,14 +173,25 @@ const updateIndex = () => {
         // Read current index.html
         let indexContent = fs.readFileSync(INDEX_FILE, 'utf8');
 
-        // Generate all cards HTML
-        const cardsHTML = components.map(generateCardHTML).join('\n');
+        const grouped = components.reduce((acc, component) => {
+            acc[component.category] = acc[component.category] || [];
+            acc[component.category].push(component);
+            return acc;
+        }, {});
 
-        // Replace the cards grid content
-        const cardsGridRegex = /(<div class="cards-grid" id="componentsGrid">)([\s\S]*?)(<\/div>\s*<\/div>\s*<\/section>)/;
+        Object.keys(grouped).forEach(category => {
+            grouped[category].sort((a, b) => a.title.localeCompare(b.title));
+        });
+
+        const sortedCategories = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+        const sectionsHTML = sortedCategories
+            .map(category => generateSectionHTML(category, grouped[category]))
+            .join('\n');
+
+        const sectionsRegex = /(<div id="componentsSections">)([\s\S]*?)(<\/div>\s*<\/div>\s*<\/section>)/;
         indexContent = indexContent.replace(
-            cardsGridRegex,
-            `$1\n                <!-- Cards will be dynamically inserted here -->\n${cardsHTML}\n            $3`
+            sectionsRegex,
+            `$1\n                <!-- Sections will be dynamically inserted here -->\n${sectionsHTML}\n            $3`
         );
 
         // Write updated content back to index.html

@@ -196,6 +196,60 @@
             border-color: var(--primary);
         }
 
+        .category-nav-section {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: var(--bg-light);
+            padding: 12px 0 18px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .category-nav {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 4px 2px;
+            scrollbar-width: thin;
+        }
+
+        .category-chip {
+            border: 1px solid var(--border);
+            background: white;
+            color: var(--text-dark);
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .category-chip:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        .category-chip.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .category-count {
+            background: rgba(102, 126, 234, 0.12);
+            color: var(--primary-dark);
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.8em;
+            font-weight: 700;
+        }
+
         /* Content Section */
         .content-section {
             padding: 40px 0 80px;
@@ -229,6 +283,60 @@
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 30px;
             margin-top: 30px;
+        }
+
+        .topic-section {
+            margin-top: 40px;
+        }
+
+        .topic-section:first-of-type {
+            margin-top: 0;
+        }
+
+        .topic-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 16px;
+            background: rgba(102, 126, 234, 0.08);
+            border-radius: 12px;
+        }
+
+        .topic-title {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .topic-count {
+            color: var(--text-light);
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .topic-grid {
+            margin-top: 20px;
+        }
+
+        .topic-section.collapsed .topic-grid {
+            display: none;
+        }
+
+        .topic-toggle {
+            border: none;
+            background: transparent;
+            color: var(--text-light);
+            font-weight: 700;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .topic-toggle:hover {
+            color: var(--primary);
+            background: rgba(102, 126, 234, 0.12);
         }
 
         .card {
@@ -446,6 +554,13 @@
         </div>
     </section>
 
+    <!-- Category Navigation -->
+    <section class="category-nav-section">
+        <div class="container">
+            <div class="category-nav" id="categoryNav"></div>
+        </div>
+    </section>
+
     <!-- Search Section -->
     <section class="search-section">
         <div class="container">
@@ -487,20 +602,15 @@
                 <div class="no-results-hint">Try adjusting your search or browse all topics</div>
             </div>
 
-            <div class="cards-grid" id="componentsGrid">
-                <!-- Cards will be dynamically inserted here -->
-            <a href="components/Kafka_Fault_Tolerance.html" class="card" data-search-content="">
-                <span class="card-icon">📄</span>
-                <div class="card-title">Kafka Fault Tolerance</div>
-                <p class="card-description">Comprehensive guide covering kafka fault tolerance concepts and best practices.</p>
-                <div class="card-footer">
-                    <span class="card-action">
-                        Open Guide <span class="arrow">→</span>
-                    </span>
-                    <span class="card-tag">Concept</span>
+            <div id="componentsSections">
+                <!-- Sections will be dynamically inserted here -->
+            <div class="topic-section" data-category="Data">
+                <div class="topic-header">
+                    <h3 class="topic-title">Data</h3>
+                    <span class="topic-count">1 topic</span>
                 </div>
-            </a>
-            <a href="components/Partitioning_Bucketing_Pruning.html" class="card" data-search-content="">
+                <div class="cards-grid topic-grid">
+            <a href="components/data/Partitioning_Bucketing_Pruning.html" class="card" data-search-content="" data-category="Data">
                 <span class="card-icon">🔧</span>
                 <div class="card-title">Partitioning Bucketing Pruning</div>
                 <p class="card-description">Learn about data partitioning strategies, bucketing techniques, and partition pruning optimization.</p>
@@ -511,18 +621,15 @@
                     <span class="card-tag">Data</span>
                 </div>
             </a>
-            <a href="components/PySpark_Master_Guide.html" class="card" data-search-content="">
-                <span class="card-icon">⚡</span>
-                <div class="card-title">PySpark Master Guide</div>
-                <p class="card-description">Comprehensive guide covering pyspark master guide concepts and best practices.</p>
-                <div class="card-footer">
-                    <span class="card-action">
-                        Open Guide <span class="arrow">→</span>
-                    </span>
-                    <span class="card-tag">Performance</span>
                 </div>
-            </a>
-            <a href="components/dbt_quick_prep.html" class="card" data-search-content="">
+            </div>
+            <div class="topic-section" data-category="Dbt">
+                <div class="topic-header">
+                    <h3 class="topic-title">Dbt</h3>
+                    <span class="topic-count">2 topics</span>
+                </div>
+                <div class="cards-grid topic-grid">
+            <a href="components/dbt/dbt_quick_prep.html" class="card" data-search-content="" data-category="Dbt">
                 <span class="card-icon">📄</span>
                 <div class="card-title">Dbt Quick Prep</div>
                 <p class="card-description">Comprehensive guide covering dbt quick prep concepts and best practices.</p>
@@ -533,7 +640,7 @@
                     <span class="card-tag">Concept</span>
                 </div>
             </a>
-            <a href="components/dbt_snapshot_for_SCD2.html" class="card" data-search-content="">
+            <a href="components/dbt/dbt_snapshot_for_SCD2.html" class="card" data-search-content="" data-category="Dbt">
                 <span class="card-icon">📄</span>
                 <div class="card-title">Dbt Snapshot For SCD2</div>
                 <p class="card-description">Comprehensive guide covering dbt snapshot for scd2 concepts and best practices.</p>
@@ -544,7 +651,45 @@
                     <span class="card-tag">Concept</span>
                 </div>
             </a>
-            <a href="components/spark_Performance_optimiser.html" class="card" data-search-content="">
+                </div>
+            </div>
+            <div class="topic-section" data-category="Kafka">
+                <div class="topic-header">
+                    <h3 class="topic-title">Kafka</h3>
+                    <span class="topic-count">1 topic</span>
+                </div>
+                <div class="cards-grid topic-grid">
+            <a href="components/kafka/Kafka_Fault_Tolerance.html" class="card" data-search-content="" data-category="Kafka">
+                <span class="card-icon">📄</span>
+                <div class="card-title">Kafka Fault Tolerance</div>
+                <p class="card-description">Comprehensive guide covering kafka fault tolerance concepts and best practices.</p>
+                <div class="card-footer">
+                    <span class="card-action">
+                        Open Guide <span class="arrow">→</span>
+                    </span>
+                    <span class="card-tag">Concept</span>
+                </div>
+            </a>
+                </div>
+            </div>
+            <div class="topic-section" data-category="Spark">
+                <div class="topic-header">
+                    <h3 class="topic-title">Spark</h3>
+                    <span class="topic-count">2 topics</span>
+                </div>
+                <div class="cards-grid topic-grid">
+            <a href="components/spark/PySpark_Master_Guide.html" class="card" data-search-content="" data-category="Spark">
+                <span class="card-icon">⚡</span>
+                <div class="card-title">PySpark Master Guide</div>
+                <p class="card-description">Comprehensive guide covering pyspark master guide concepts and best practices.</p>
+                <div class="card-footer">
+                    <span class="card-action">
+                        Open Guide <span class="arrow">→</span>
+                    </span>
+                    <span class="card-tag">Performance</span>
+                </div>
+            </a>
+            <a href="components/spark/spark_Performance_optimiser.html" class="card" data-search-content="" data-category="Spark">
                 <span class="card-icon">⚡</span>
                 <div class="card-title">Spark Performance Optimiser</div>
                 <p class="card-description">Explore performance optimization techniques and best practices for Apache Spark applications.</p>
@@ -555,6 +700,8 @@
                     <span class="card-tag">Performance</span>
                 </div>
             </a>
+                </div>
+            </div>
             </div>
         </div>
     </section>
@@ -637,6 +784,135 @@
                     searchInfo.innerHTML = `<span class="search-results-badge">Found ${visibleCount} topic${visibleCount !== 1 ? 's' : ''}</span>`;
                 }
             }
+
+            updateSectionVisibility();
+        }
+
+        function buildCategoryNav() {
+            const nav = document.getElementById('categoryNav');
+            const sections = Array.from(document.querySelectorAll('.topic-section'));
+            const items = [{ label: 'All', category: 'all' }]
+                .concat(sections.map(section => ({
+                    label: section.dataset.category || 'Category',
+                    category: section.dataset.category || 'Category'
+                })));
+
+            nav.innerHTML = '';
+
+            items.forEach(item => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'category-chip';
+                button.dataset.category = item.category;
+                button.innerHTML = `${item.label} <span class="category-count">0</span>`;
+
+                button.addEventListener('click', () => {
+                    setActiveCategoryChip(item.category);
+
+                    if (item.category === 'all') {
+                        sections.forEach(section => section.classList.remove('collapsed'));
+                        window.scrollTo({ top: nav.offsetTop, behavior: 'smooth' });
+                        return;
+                    }
+
+                    sections.forEach(section => {
+                        if (section.dataset.category === item.category) {
+                            section.classList.remove('collapsed');
+                            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        } else {
+                            section.classList.add('collapsed');
+                        }
+                    });
+                });
+
+                nav.appendChild(button);
+            });
+
+            updateNavCounts();
+        }
+
+        function setActiveCategoryChip(category) {
+            document.querySelectorAll('.category-chip').forEach(chip => {
+                chip.classList.toggle('active', chip.dataset.category === category);
+            });
+        }
+
+        function updateNavCounts() {
+            const sections = Array.from(document.querySelectorAll('.topic-section'));
+            const allCount = sections.reduce((sum, section) => {
+                return sum + section.querySelectorAll('.card:not(.hidden)').length;
+            }, 0);
+
+            document.querySelectorAll('.category-chip').forEach(chip => {
+                const category = chip.dataset.category;
+                let count = 0;
+
+                if (category === 'all') {
+                    count = allCount;
+                } else {
+                    const section = sections.find(item => item.dataset.category === category);
+                    if (section) {
+                        count = section.querySelectorAll('.card:not(.hidden)').length;
+                    }
+                }
+
+                const countEl = chip.querySelector('.category-count');
+                if (countEl) {
+                    countEl.textContent = count;
+                }
+
+                chip.style.display = count === 0 ? 'none' : '';
+            });
+        }
+
+        function updateSectionVisibility() {
+            const sections = document.querySelectorAll('.topic-section');
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase().trim();
+
+            sections.forEach(section => {
+                const cards = Array.from(section.querySelectorAll('.card'));
+                const visibleCards = cards.filter(card => !card.classList.contains('hidden'));
+                section.style.display = visibleCards.length ? '' : 'none';
+
+                if (searchTerm) {
+                    section.classList.toggle('collapsed', visibleCards.length === 0);
+                }
+
+                const countEl = section.querySelector('.topic-count');
+                if (countEl) {
+                    const countLabel = visibleCards.length === 1 ? '1 topic' : `${visibleCards.length} topics`;
+                    countEl.textContent = countLabel;
+                }
+            });
+
+            updateNavCounts();
+        }
+
+        function addSectionToggles() {
+            const sections = document.querySelectorAll('.topic-section');
+
+            sections.forEach((section, index) => {
+                const header = section.querySelector('.topic-header');
+                if (!header || header.querySelector('.topic-toggle')) {
+                    return;
+                }
+
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'topic-toggle';
+                button.textContent = index === 0 ? 'Collapse' : 'Expand';
+
+                if (index !== 0) {
+                    section.classList.add('collapsed');
+                }
+
+                button.addEventListener('click', () => {
+                    const isCollapsed = section.classList.toggle('collapsed');
+                    button.textContent = isCollapsed ? 'Expand' : 'Collapse';
+                });
+
+                header.appendChild(button);
+            });
         }
 
         // Filter functions
@@ -662,6 +938,10 @@
             const searchBox = document.getElementById('searchBox');
             
             loadComponentContent();
+            addSectionToggles();
+            buildCategoryNav();
+            updateSectionVisibility();
+            setActiveCategoryChip('all');
             
             let searchTimeout;
             searchBox.addEventListener('input', () => {
