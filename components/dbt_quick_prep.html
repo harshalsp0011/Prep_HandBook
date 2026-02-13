@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dbt Quick Prep Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .tab-btn.active { 
+            border-bottom: 3px solid #ff6b6b;
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.05);
+        }
+        .code-block {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: 'Courier New', Courier, monospace;
+            overflow-x: auto;
+        }
+        .keyword { color: #569cd6; }
+        .function { color: #dcdcaa; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .variable { color: #9cdcfe; }
+        
+        .dag-node {
+            transition: all 0.3s ease;
+        }
+        .dag-node:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-orange-500 rounded flex items-center justify-center text-white">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight">dbt <span class="text-gray-400 font-light">Quick Prep</span></h1>
+            </div>
+            <div class="text-sm font-medium text-gray-500">
+                Data Build Tool • Analytics Engineering
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-8">
+        
+        <!-- Navigation Tabs -->
+        <nav class="flex space-x-1 mb-8 border-b border-gray-200 bg-white rounded-t-lg overflow-x-auto">
+            <button onclick="showTab('what')" class="tab-btn px-6 py-4 text-sm font-semibold transition-all whitespace-nowrap active">1. What is dbt?</button>
+            <button onclick="showTab('why')" class="tab-btn px-6 py-4 text-sm font-semibold transition-all whitespace-nowrap">2. Why & Use Case</button>
+            <button onclick="showTab('how')" class="tab-btn px-6 py-4 text-sm font-semibold transition-all whitespace-nowrap">3. How it Works</button>
+            <button onclick="showTab('code')" class="tab-btn px-6 py-4 text-sm font-semibold transition-all whitespace-nowrap">4. Example Code</button>
+            <button onclick="showTab('interview')" class="tab-btn px-6 py-4 text-sm font-semibold transition-all whitespace-nowrap">5. Interview Cheat Sheet</button>
+        </nav>
+
+        <!-- Tab 1: What is dbt? -->
+        <div id="what" class="tab-content active space-y-6">
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+                <h2 class="text-2xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-info-circle text-blue-500 mr-3"></i> The Definition
+                </h2>
+                <p class="text-lg text-gray-600 mb-6">
+                    <strong>dbt (data build tool)</strong> is an open-source framework that handles the <span class="text-orange-600 font-bold">"T"</span> in ELT (Extract, Load, Transform). 
+                    It allows anyone who knows SQL to engineer data like a software engineer.
+                </p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="p-4 bg-blue-50 border border-blue-100 rounded-lg">
+                        <h3 class="font-bold text-blue-800 mb-2">The "T" in ELT</h3>
+                        <p class="text-sm text-blue-700">dbt doesn't move data. It transforms data already sitting in your warehouse (Snowflake, BigQuery, etc.).</p>
+                    </div>
+                    <div class="p-4 bg-green-50 border border-green-100 rounded-lg">
+                        <h3 class="font-bold text-green-800 mb-2">Software Best Practices</h3>
+                        <p class="text-sm text-green-700">Brings Version Control (Git), Testing, Documentation, and CI/CD to the world of data analytics.</p>
+                    </div>
+                    <div class="p-4 bg-purple-50 border border-purple-100 rounded-lg">
+                        <h3 class="font-bold text-purple-800 mb-2">Pure SQL & Jinja</h3>
+                        <p class="text-sm text-purple-700">Write simple SELECT statements; dbt handles the boilerplate DDL/DML (CREATE TABLE, INSERT INTO) for you.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="text-xl font-bold mb-6">Traditional vs. dbt Workflow</h3>
+                <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-4">
+                    <div class="flex-1 text-center p-6 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 opacity-60">
+                        <p class="text-xs uppercase font-bold text-gray-400 mb-4 tracking-widest">Traditional ETL</p>
+                        <div class="flex flex-col space-y-2">
+                            <span class="bg-gray-200 px-3 py-1 rounded text-sm">Python/Java Logic</span>
+                            <i class="fas fa-arrow-down text-gray-300"></i>
+                            <span class="bg-gray-200 px-3 py-1 rounded text-sm">Hard to Test</span>
+                            <i class="fas fa-arrow-down text-gray-300"></i>
+                            <span class="bg-gray-200 px-3 py-1 rounded text-sm">Hidden in Tools</span>
+                        </div>
+                    </div>
+                    <div class="text-orange-500 font-bold hidden md:block">VS</div>
+                    <div class="flex-1 text-center p-6 border-2 border-orange-200 rounded-xl bg-orange-50">
+                        <p class="text-xs uppercase font-bold text-orange-400 mb-4 tracking-widest">dbt Workflow</p>
+                        <div class="flex flex-col space-y-2">
+                            <span class="bg-orange-400 text-white px-3 py-1 rounded text-sm font-bold">SQL SELECT</span>
+                            <i class="fas fa-arrow-down text-orange-400"></i>
+                            <span class="bg-orange-400 text-white px-3 py-1 rounded text-sm font-bold">Auto Documentation</span>
+                            <i class="fas fa-arrow-down text-orange-400"></i>
+                            <span class="bg-orange-400 text-white px-3 py-1 rounded text-sm font-bold">Data Quality Tests</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Why & Use Case -->
+        <div id="why" class="tab-content space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-xl font-bold mb-4">Core Benefits</h3>
+                    <ul class="space-y-4">
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                            <div>
+                                <p class="font-bold">Modularity (DRY Principle)</p>
+                                <p class="text-sm text-gray-600">Don't Repeat Yourself. Use <code>{{ ref('model_name') }}</code> to build on top of previous work.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                            <div>
+                                <p class="font-bold">Automated Lineage</p>
+                                <p class="text-sm text-gray-600">dbt generates a visual graph (DAG) of how your tables depend on each other.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                            <div>
+                                <p class="font-bold">Reliability</p>
+                                <p class="text-sm text-gray-600">Catch broken data *before* it hits the dashboard with <code>dbt test</code>.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-xl font-bold mb-4">Common Use Cases</h3>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <p class="font-bold">Cleaning Data</p>
+                            <p class="text-sm text-gray-600">Standardizing date formats, cleaning nulls, and renaming cryptic column names from source systems.</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <p class="font-bold">Building a Metrics Layer</p>
+                            <p class="text-sm text-gray-600">Aggregating raw orders into "Daily Revenue" or "Monthly Active Users" for BI tools.</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <p class="font-bold">Schema Evolution</p>
+                            <p class="text-sm text-gray-600">Seamlessly changing table structures without manual <code>ALTER TABLE</code> scripts.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: How it Works -->
+        <div id="how" class="tab-content space-y-6">
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="text-xl font-bold mb-8 text-center">The dbt Lifecycle</h3>
+                <div class="relative">
+                    <!-- Line -->
+                    <div class="absolute top-1/2 left-0 w-full h-1 bg-gray-100 -translate-y-1/2 hidden md:block"></div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
+                        <div class="flex flex-col items-center text-center">
+                            <div class="w-12 h-12 bg-white border-4 border-blue-500 rounded-full flex items-center justify-center text-blue-500 font-bold mb-4 z-10">1</div>
+                            <p class="font-bold text-sm">DEVELOP</p>
+                            <p class="text-xs text-gray-500">Write modular SQL Select statements</p>
+                        </div>
+                        <div class="flex flex-col items-center text-center">
+                            <div class="w-12 h-12 bg-white border-4 border-green-500 rounded-full flex items-center justify-center text-green-500 font-bold mb-4 z-10">2</div>
+                            <p class="font-bold text-sm">TEST</p>
+                            <p class="text-xs text-gray-500">Assert uniqueness, nulls, and keys</p>
+                        </div>
+                        <div class="flex flex-col items-center text-center">
+                            <div class="w-12 h-12 bg-white border-4 border-orange-500 rounded-full flex items-center justify-center text-orange-500 font-bold mb-4 z-10">3</div>
+                            <p class="font-bold text-sm">DOCUMENT</p>
+                            <p class="text-xs text-gray-500">Auto-generate descriptions and lineage</p>
+                        </div>
+                        <div class="flex flex-col items-center text-center">
+                            <div class="w-12 h-12 bg-white border-4 border-purple-500 rounded-full flex items-center justify-center text-purple-500 font-bold mb-4 z-10">4</div>
+                            <p class="font-bold text-sm">DEPLOY</p>
+                            <p class="text-xs text-gray-500">Run transformations in production</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-800 p-8 rounded-xl text-white">
+                <h3 class="text-lg font-bold mb-4 text-orange-400">Key Terminology</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+                    <div>
+                        <span class="font-mono text-blue-300">Model</span>: A <code>.sql</code> file with a SELECT statement.
+                    </div>
+                    <div>
+                        <span class="font-mono text-blue-300">Materialization</span>: How a model is built (Table, View, Incremental).
+                    </div>
+                    <div>
+                        <span class="font-mono text-blue-300">Seed</span>: Static CSV files loaded into the warehouse.
+                    </div>
+                    <div>
+                        <span class="font-mono text-blue-300">Snapshots</span>: Mechanism to capture Type 2 Slow Changing Dimensions.
+                    </div>
+                    <div>
+                        <span class="font-mono text-blue-300">Macro</span>: Reusable SQL snippets (like functions).
+                    </div>
+                    <div>
+                        <span class="font-mono text-blue-300">DAG</span>: Directed Acyclic Graph (the lineage chart).
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Example Code -->
+        <div id="code" class="tab-content space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- SQL Part -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-lg font-bold mb-4">1. The Model (orders.sql)</h3>
+                    <div class="code-block text-sm">
+                        <span class="comment">-- dbt handles the "CREATE TABLE" part automatically</span><br>
+                        <span class="function">{{</span> <span class="keyword">config</span>(materialized=<span class="string">'table'</span>) <span class="function">}}</span><br><br>
+                        <span class="keyword">WITH</span> raw_orders <span class="keyword">AS</span> (<br>
+                        &nbsp;&nbsp;<span class="keyword">SELECT</span> * <span class="keyword">FROM</span> <span class="function">{{</span> <span class="keyword">source</span>(<span class="string">'jaffle_shop'</span>, <span class="string">'orders'</span>) <span class="function">}}</span><br>
+                        ),<br><br>
+                        final <span class="keyword">AS</span> (<br>
+                        &nbsp;&nbsp;<span class="keyword">SELECT</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;id <span class="keyword">AS</span> order_id,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;user_id,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;order_date,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;status<br>
+                        &nbsp;&nbsp;<span class="keyword">FROM</span> raw_orders<br>
+                        )<br><br>
+                        <span class="keyword">SELECT</span> * <span class="keyword">FROM</span> final
+                    </div>
+                </div>
+
+                <!-- YAML Part -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-lg font-bold mb-4">2. The Config (schema.yml)</h3>
+                    <div class="code-block text-sm">
+                        <span class="keyword">version:</span> 2<br><br>
+                        <span class="keyword">models:</span><br>
+                        &nbsp;&nbsp;- <span class="keyword">name:</span> orders<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">description:</span> <span class="string">"Cleaned list of shop orders"</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">columns:</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="keyword">name:</span> order_id<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">tests:</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="variable">unique</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="variable">not_null</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="keyword">name:</span> status<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">tests:</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="variable">accepted_values</span>:<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">values:</span> [<span class="string">'placed'</span>, <span class="string">'shipped'</span>, <span class="string">'completed'</span>]
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-blue-600 p-6 rounded-xl text-white">
+                <h3 class="font-bold mb-3 flex items-center"><i class="fas fa-terminal mr-2"></i> Command Line Cheat Sheet</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-blue-700 p-3 rounded">
+                        <code class="text-xs font-bold">dbt run</code>
+                        <p class="text-[10px] opacity-80 mt-1">Build all models</p>
+                    </div>
+                    <div class="bg-blue-700 p-3 rounded">
+                        <code class="text-xs font-bold">dbt test</code>
+                        <p class="text-[10px] opacity-80 mt-1">Run data quality checks</p>
+                    </div>
+                    <div class="bg-blue-700 p-3 rounded">
+                        <code class="text-xs font-bold">dbt seed</code>
+                        <p class="text-[10px] opacity-80 mt-1">Load CSVs to warehouse</p>
+                    </div>
+                    <div class="bg-blue-700 p-3 rounded">
+                        <code class="text-xs font-bold">dbt docs serve</code>
+                        <p class="text-[10px] opacity-80 mt-1">Open lineage & docs</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Interview Cheat Sheet -->
+        <div id="interview" class="tab-content space-y-6">
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="text-xl font-bold mb-6">High-Level Questions (Flashcards)</h3>
+                
+                <div class="space-y-4">
+                    <details class="group bg-gray-50 p-4 rounded-lg border border-gray-200 cursor-pointer">
+                        <summary class="font-bold flex justify-between items-center">
+                            What is the difference between a Table and a View materialization?
+                            <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <div class="mt-4 text-gray-600 text-sm">
+                            <p><strong>View:</strong> Re-run as a query every time it's accessed. No storage cost, but slow for big datasets.</p>
+                            <p class="mt-2"><strong>Table:</strong> Physically created in the warehouse. Faster to query but needs to be "run" by dbt to update the data.</p>
+                        </div>
+                    </details>
+
+                    <details class="group bg-gray-50 p-4 rounded-lg border border-gray-200 cursor-pointer">
+                        <summary class="font-bold flex justify-between items-center">
+                            What is an Incremental Model and when should you use it?
+                            <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <div class="mt-4 text-gray-600 text-sm">
+                            <p>An <strong>Incremental model</strong> only processes new or changed records since the last dbt run.</p>
+                            <p class="mt-2"><strong>Use Case:</strong> Large fact tables (millions/billions of rows) where re-building the whole table every time is too expensive or slow.</p>
+                        </div>
+                    </details>
+
+                    <details class="group bg-gray-50 p-4 rounded-lg border border-gray-200 cursor-pointer">
+                        <summary class="font-bold flex justify-between items-center">
+                            What are the 4 Generic Tests built into dbt?
+                            <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <div class="mt-4 text-gray-600 text-sm">
+                            <ul class="list-disc pl-5 space-y-1">
+                                <li><strong>unique:</strong> Ensures every value in a column is unique.</li>
+                                <li><strong>not_null:</strong> Checks for missing values.</li>
+                                <li><strong>accepted_values:</strong> Validates a column only contains specific values (e.g., 'active', 'inactive').</li>
+                                <li><strong>relationships:</strong> Checks referential integrity (Foreign Key test).</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details class="group bg-gray-50 p-4 rounded-lg border border-gray-200 cursor-pointer">
+                        <summary class="font-bold flex justify-between items-center">
+                            dbt Core vs. dbt Cloud?
+                            <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <div class="mt-4 text-gray-600 text-sm">
+                            <p><strong>Core:</strong> Open-source CLI tool. You manage the environment and orchestration (e.g., with Airflow).</p>
+                            <p class="mt-2"><strong>Cloud:</strong> SaaS version. Includes an IDE, Job Scheduler, Logging, and a Semantic Layer out of the box.</p>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <div class="bg-orange-50 p-8 rounded-xl border-l-4 border-orange-500">
+                <h3 class="font-bold text-orange-800 mb-2">Pro Tip for Interviews:</h3>
+                <p class="text-orange-700">Mention <strong>Lineage (DAG)</strong> and <strong>Documentation</strong>. Most companies struggle with finding where data comes from; dbt solves this by default. If you mention that you always "test before you deploy," you'll stand out.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        function showTab(tabId) {
+            // Hide all tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active style from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show target tab
+            document.getElementById(tabId).classList.add('active');
+            
+            // Add active style to clicked button
+            event.currentTarget.classList.add('active');
+        }
+    </script>
+</body>
+</html>
