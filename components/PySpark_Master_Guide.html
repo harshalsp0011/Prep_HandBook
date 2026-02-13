@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark Interactive Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .nav-tab.active { 
+            color: #2563eb; 
+            border-bottom: 2px solid #2563eb; 
+            background-color: #eff6ff;
+        }
+        .step-line::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            width: 100%;
+            height: 2px;
+            background: #e5e7eb;
+            z-index: -1;
+        }
+        @media (max-width: 768px) {
+            .step-line::after { display: none; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 antialiased">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="p-2 bg-blue-600 rounded-lg text-white">
+                    <i data-lucide="zap" class="w-6 h-6"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-gray-900">PySpark<span class="text-blue-600">Mastery</span></h1>
+            </div>
+            <nav class="hidden md:flex space-x-1 text-sm font-medium">
+                <a href="#github" class="px-3 py-2 text-gray-500 hover:text-blue-600 transition">Docs</a>
+                <a href="#github" class="px-3 py-2 text-gray-500 hover:text-blue-600 transition">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Navigation Tabs -->
+        <div class="flex overflow-x-auto border-b border-gray-200 mb-8 no-scrollbar bg-white rounded-t-xl shadow-sm">
+            <button onclick="switchTab('intro')" class="nav-tab active flex-shrink-0 px-6 py-4 text-sm font-semibold transition-all border-b-2 border-transparent">What is PySpark?</button>
+            <button onclick="switchTab('why')" class="nav-tab flex-shrink-0 px-6 py-4 text-sm font-semibold transition-all border-b-2 border-transparent">Why & Use Cases</button>
+            <button onclick="switchTab('how')" class="nav-tab flex-shrink-0 px-6 py-4 text-sm font-semibold transition-all border-b-2 border-transparent">How it Works</button>
+            <button onclick="switchTab('example')" class="nav-tab flex-shrink-0 px-6 py-4 text-sm font-semibold transition-all border-b-2 border-transparent">Technical Deep-Dive</button>
+            <button onclick="switchTab('interview')" class="nav-tab flex-shrink-0 px-6 py-4 text-sm font-semibold transition-all border-b-2 border-transparent">Interview Prep</button>
+        </div>
+
+        <!-- Section 1: Intro -->
+        <div id="intro" class="tab-content active animate-in fade-in duration-500">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-16">
+                <div>
+                    <h2 class="text-4xl font-extrabold text-gray-900 leading-tight mb-4">The Big Data Engine for <span class="text-blue-600">Pythonistas.</span></h2>
+                    <p class="text-lg text-gray-600 mb-8">PySpark is the Python API for Apache Spark, an open-source, distributed computing framework. It allows you to process massive datasets in parallel across a cluster using the simplicity of Python syntax.</p>
+                    <div class="flex gap-4">
+                        <div class="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                            <i data-lucide="check-circle" class="w-4 h-4"></i> Distributed
+                        </div>
+                        <div class="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                            <i data-lucide="check-circle" class="w-4 h-4"></i> Fast
+                        </div>
+                        <div class="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
+                            <i data-lucide="check-circle" class="w-4 h-4"></i> Scalable
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-900 rounded-2xl p-6 shadow-2xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <i data-lucide="database" class="w-32 h-32"></i>
+                    </div>
+                    <pre class="text-blue-400 text-sm font-mono leading-relaxed">
+<span class="text-gray-500"># PySpark vs. Pandas</span>
+<span class="text-pink-400">import</span> pyspark.sql.functions <span class="text-pink-400">as</span> F
+
+<span class="text-gray-500"># Process 100TB of data easily</span>
+df = spark.read.parquet(<span class="text-green-400">"s3://big-data/logs"</span>)
+df.groupBy(<span class="text-green-400">"region"</span>) \
+  .agg(F.count(<span class="text-green-400">"*"</span>).alias(<span class="text-green-400">"hits"</span>)) \
+  .filter(F.col(<span class="text-green-400">"hits"</span>) > <span class="text-orange-400">1000</span>) \
+  .show()</pre>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <i data-lucide="layers" class="text-blue-600 mb-4 w-10 h-10"></i>
+                    <h3 class="text-xl font-bold mb-2">In-Memory Computing</h3>
+                    <p class="text-gray-600">Spark caches data in RAM, making it up to 100x faster than Hadoop MapReduce for iterative algorithms.</p>
+                </div>
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <i data-lucide="cpu" class="text-blue-600 mb-4 w-10 h-10"></i>
+                    <h3 class="text-xl font-bold mb-2">Parallel Processing</h3>
+                    <p class="text-gray-600">Tasks are split into chunks and distributed across worker nodes, allowing linear scalability.</p>
+                </div>
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <i data-lucide="git-branch" class="text-blue-600 mb-4 w-10 h-10"></i>
+                    <h3 class="text-xl font-bold mb-2">Fault Tolerance</h3>
+                    <p class="text-gray-600">Using RDDs (Resilient Distributed Datasets), Spark can recompute lost data blocks automatically.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Why & Use Cases -->
+        <div id="why" class="tab-content animate-in fade-in duration-500">
+            <h2 class="text-3xl font-bold mb-8 text-center">Standard Python vs. PySpark</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+                <div class="bg-white p-8 rounded-2xl border-2 border-red-50 border-t-red-500 shadow-sm">
+                    <h3 class="text-xl font-bold text-red-600 mb-4 flex items-center gap-2">
+                        <i data-lucide="alert-circle"></i> Standard Python/Pandas
+                    </h3>
+                    <ul class="space-y-4">
+                        <li class="flex gap-3">
+                            <i data-lucide="x-circle" class="text-red-400 flex-shrink-0"></i>
+                            <span>Single-threaded execution (cannot use all CPU cores easily).</span>
+                        </li>
+                        <li class="flex gap-3">
+                            <i data-lucide="x-circle" class="text-red-400 flex-shrink-0"></i>
+                            <span>Limited by the RAM of a single machine (Out of Memory errors).</span>
+                        </li>
+                        <li class="flex gap-3">
+                            <i data-lucide="x-circle" class="text-red-400 flex-shrink-0"></i>
+                            <span>Slow for multi-terabyte datasets.</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-white p-8 rounded-2xl border-2 border-green-50 border-t-green-500 shadow-sm">
+                    <h3 class="text-xl font-bold text-green-600 mb-4 flex items-center gap-2">
+                        <i data-lucide="check-circle"></i> The PySpark Edge
+                    </h3>
+                    <ul class="space-y-4">
+                        <li class="flex gap-3">
+                            <i data-lucide="check-circle" class="text-green-500 flex-shrink-0"></i>
+                            <span>Distributed processing across 100s of CPUs.</span>
+                        </li>
+                        <li class="flex gap-3">
+                            <i data-lucide="check-circle" class="text-green-500 flex-shrink-0"></i>
+                            <span>Spills data to disk if RAM is full, ensuring job completion.</span>
+                        </li>
+                        <li class="flex gap-3">
+                            <i data-lucide="check-circle" class="text-green-500 flex-shrink-0"></i>
+                            <span>Unified engine for SQL, Streaming, and ML.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3 class="text-2xl font-bold mb-6">Real-World Applications</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-blue-600 p-6 rounded-2xl text-white">
+                    <i data-lucide="bar-chart-3" class="mb-4"></i>
+                    <h4 class="font-bold mb-2">ETL Pipelines</h4>
+                    <p class="text-sm opacity-90">Transforming raw data from data lakes into structured warehouses.</p>
+                </div>
+                <div class="bg-indigo-600 p-6 rounded-2xl text-white">
+                    <i data-lucide="activity" class="mb-4"></i>
+                    <h4 class="font-bold mb-2">Real-time Analytics</h4>
+                    <p class="text-sm opacity-90">Using Spark Streaming to process Kafka logs in milliseconds.</p>
+                </div>
+                <div class="bg-purple-600 p-6 rounded-2xl text-white">
+                    <i data-lucide="brain-circuit" class="mb-4"></i>
+                    <h4 class="font-bold mb-2">Machine Learning</h4>
+                    <p class="text-sm opacity-90">Training models on billions of rows using the MLlib library.</p>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-2xl text-white">
+                    <i data-lucide="search" class="mb-4"></i>
+                    <h4 class="font-bold mb-2">Fraud Detection</h4>
+                    <p class="text-sm opacity-90">Analyzing patterns across global transactions in real-time.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: How it Works -->
+        <div id="how" class="tab-content animate-in fade-in duration-500">
+            <h2 class="text-3xl font-bold mb-12 text-center">Architecture: The Cluster Lifecycle</h2>
+            
+            <div class="relative flex flex-col md:flex-row items-center justify-between gap-8 md:gap-4 mb-20">
+                <!-- Driver -->
+                <div class="relative z-10 w-full md:w-1/4 bg-white p-6 rounded-2xl shadow-lg border-2 border-blue-500 flex flex-col items-center text-center">
+                    <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4 font-bold">1</div>
+                    <h4 class="font-bold">Driver Program</h4>
+                    <p class="text-xs text-gray-500 mt-2">Creates SparkSession & DAG (Logical Plan)</p>
+                </div>
+
+                <div class="hidden md:block flex-1 h-0.5 bg-blue-200"></div>
+
+                <!-- Cluster Manager -->
+                <div class="relative z-10 w-full md:w-1/4 bg-white p-6 rounded-2xl shadow-lg border border-gray-200 flex flex-col items-center text-center">
+                    <div class="w-12 h-12 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center mb-4 font-bold">2</div>
+                    <h4 class="font-bold">Cluster Manager</h4>
+                    <p class="text-xs text-gray-500 mt-2">YARN, Mesos, or Kubernetes (Allocates Resources)</p>
+                </div>
+
+                <div class="hidden md:block flex-1 h-0.5 bg-blue-200"></div>
+
+                <!-- Workers -->
+                <div class="relative z-10 w-full md:w-1/4 bg-blue-50 p-6 rounded-2xl shadow-lg border-2 border-dashed border-blue-300 flex flex-col items-center text-center">
+                    <div class="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center mb-4 font-bold">3</div>
+                    <h4 class="font-bold text-blue-800">Worker Nodes</h4>
+                    <p class="text-xs text-blue-600 mt-2">Executors run Tasks in parallel threads</p>
+                </div>
+            </div>
+
+            <div class="bg-gray-100 p-8 rounded-3xl">
+                <h3 class="text-xl font-bold mb-4">The Execution Logic</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-4">
+                        <div class="bg-white p-4 rounded-xl shadow-sm flex items-start gap-4">
+                            <span class="bg-orange-100 text-orange-600 px-3 py-1 rounded text-xs font-bold uppercase tracking-wider">Step A</span>
+                            <div>
+                                <h5 class="font-bold">Transformations (Lazy)</h5>
+                                <p class="text-sm text-gray-600">Operations like `filter()` or `map()` aren't executed immediately. Spark records them in a Directed Acyclic Graph (DAG).</p>
+                            </div>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl shadow-sm flex items-start gap-4">
+                            <span class="bg-green-100 text-green-600 px-3 py-1 rounded text-xs font-bold uppercase tracking-wider">Step B</span>
+                            <div>
+                                <h5 class="font-bold">Actions (Eager)</h5>
+                                <p class="text-sm text-gray-600">Operations like `collect()`, `count()`, or `save()` trigger the actual computation of the DAG.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-center border-l border-gray-300 pl-8">
+                        <div class="text-center">
+                            <p class="text-sm text-gray-500 mb-2 uppercase tracking-widest font-bold">Concept Key</p>
+                            <div class="inline-block p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+                                <span class="text-blue-600 font-mono font-bold text-lg">DAG Scheduler</span>
+                                <div class="my-2 h-px bg-gray-200"></div>
+                                <span class="text-gray-400 text-sm">Optimizes physical execution plan</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 4: Example -->
+        <div id="example" class="tab-content animate-in fade-in duration-500">
+            <h2 class="text-3xl font-bold mb-8">Hands-on: Log Analysis Workflow</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-gray-900 rounded-xl overflow-hidden shadow-xl">
+                        <div class="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
+                            <div class="flex space-x-2">
+                                <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                                <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                                <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                            </div>
+                            <span class="text-gray-400 text-xs font-mono">analysis.py</span>
+                        </div>
+                        <pre class="p-6 text-sm md:text-base font-mono leading-relaxed text-blue-300 overflow-x-auto">
+<span class="text-pink-400">from</span> pyspark.sql <span class="text-pink-400">import</span> SparkSession
+
+<span class="text-gray-500"># 1. Initialize Spark</span>
+spark = SparkSession.builder \
+    .appName(<span class="text-green-400">"LogAnalysis"</span>) \
+    .getOrCreate()
+
+<span class="text-gray-500"># 2. Load Data</span>
+raw_logs = spark.read.text(<span class="text-green-400">"access.log"</span>)
+
+<span class="text-gray-500"># 3. Transform: Find 404 errors by IP</span>
+errors = raw_logs.filter(raw_logs.value.contains(<span class="text-green-400">"404"</span>)) \
+                 .selectExpr(<span class="text-green-400">"substring_index(value, ' ', 1) as ip"</span>) \
+                 .groupBy(<span class="text-green-400">"ip"</span>) \
+                 .count() \
+                 .orderBy(<span class="text-green-400">"count"</span>, ascending=<span class="text-pink-400">False</span>)
+
+<span class="text-gray-500"># 4. Action: Save Result</span>
+errors.write.csv(<span class="text-green-400">"output/error_report"</span>)</pre>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-100 p-6 rounded-xl">
+                        <h4 class="font-bold text-blue-900 mb-2 flex items-center gap-2">
+                            <i data-lucide="info"></i> Developer Insight
+                        </h4>
+                        <p class="text-sm text-blue-800">Using <code>.selectExpr()</code> and <code>substring_index</code> allows you to leverage Spark SQL syntax directly inside the DataFrame API, which is highly optimized by the <strong>Catalyst Optimizer</strong>.</p>
+                    </div>
+                </div>
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <h4 class="font-bold mb-4 flex items-center gap-2"><i data-lucide="terminal" class="w-4 h-4"></i> Data Lifecycle</h4>
+                        <ol class="space-y-4 text-sm text-gray-600">
+                            <li class="flex gap-3">
+                                <span class="font-bold text-blue-600">01</span>
+                                <span><strong>Read:</strong> Connect to S3/HDFS/Cassandra.</span>
+                            </li>
+                            <li class="flex gap-3">
+                                <span class="font-bold text-blue-600">02</span>
+                                <span><strong>Schema:</strong> Infer or manually define types.</span>
+                            </li>
+                            <li class="flex gap-3">
+                                <span class="font-bold text-blue-600">03</span>
+                                <span><strong>Partition:</strong> Distribute across cluster.</span>
+                            </li>
+                            <li class="flex gap-3">
+                                <span class="font-bold text-blue-600">04</span>
+                                <span><strong>Shuffle:</strong> Move data for Joins/Groups.</span>
+                            </li>
+                            <li class="flex gap-3">
+                                <span class="font-bold text-blue-600">05</span>
+                                <span><strong>Write:</strong> Store as Parquet/Avro/Delta.</span>
+                            </li>
+                        </ol>
+                    </div>
+                    <div class="bg-orange-50 p-6 rounded-xl border border-orange-100">
+                        <p class="text-xs font-bold text-orange-600 uppercase mb-2">Pro Tip: Storage</p>
+                        <p class="text-sm text-orange-800">Always use <strong>Parquet</strong> format instead of CSV. It is columnar and supports predicate pushdown, drastically reducing I/O costs.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 5: Interview Prep -->
+        <div id="interview" class="tab-content animate-in fade-in duration-500">
+            <div class="max-w-3xl mx-auto">
+                <h2 class="text-3xl font-bold mb-4">Interview Toolkit</h2>
+                <p class="text-gray-500 mb-8">Common technical questions for Data Engineer and Data Scientist roles.</p>
+                
+                <div class="space-y-4 mb-12">
+                    <!-- Flashcard 1 -->
+                    <div class="group">
+                        <button onclick="toggleAccordion('acc1')" class="w-full text-left bg-white p-6 rounded-xl border border-gray-200 hover:border-blue-400 transition shadow-sm flex justify-between items-center">
+                            <span class="font-bold">What is the difference between an RDD, DataFrame, and Dataset?</span>
+                            <i data-lucide="chevron-down" class="w-5 h-5 transition-transform group-hover:text-blue-600" id="icon-acc1"></i>
+                        </button>
+                        <div id="acc1" class="hidden p-6 bg-gray-50 border-x border-b border-gray-200 rounded-b-xl text-gray-700 text-sm leading-relaxed">
+                            <p class="mb-2"><strong>RDD (Resilient Distributed Dataset):</strong> Low-level API. No schema optimizations. Harder to use but offers total control.</p>
+                            <p class="mb-2"><strong>DataFrame:</strong> Conceptual equivalent of a table in a relational database. Highly optimized by Catalyst.</p>
+                            <p><strong>Dataset:</strong> (Java/Scala only) Strongly typed. PySpark treats DataFrames as Datasets of generic Row objects.</p>
+                        </div>
+                    </div>
+
+                    <!-- Flashcard 2 -->
+                    <div class="group">
+                        <button onclick="toggleAccordion('acc2')" class="w-full text-left bg-white p-6 rounded-xl border border-gray-200 hover:border-blue-400 transition shadow-sm flex justify-between items-center">
+                            <span class="font-bold">What is a "Shuffle" and why is it expensive?</span>
+                            <i data-lucide="chevron-down" class="w-5 h-5 transition-transform group-hover:text-blue-600" id="icon-acc2"></i>
+                        </button>
+                        <div id="acc2" class="hidden p-6 bg-gray-50 border-x border-b border-gray-200 rounded-b-xl text-gray-700 text-sm leading-relaxed">
+                            A Shuffle occurs when data needs to be redistributed across the cluster (e.g., for <code>groupBy</code> or <code>join</code>). It involves disk I/O, data serialization, and network transfer, making it the most expensive operation in Spark. Reducing shuffles is the key to optimization.
+                        </div>
+                    </div>
+
+                    <!-- Flashcard 3 -->
+                    <div class="group">
+                        <button onclick="toggleAccordion('acc3')" class="w-full text-left bg-white p-6 rounded-xl border border-gray-200 hover:border-blue-400 transition shadow-sm flex justify-between items-center">
+                            <span class="font-bold">Explain "Broadcast Join".</span>
+                            <i data-lucide="chevron-down" class="w-5 h-5 transition-transform group-hover:text-blue-600" id="icon-acc3"></i>
+                        </button>
+                        <div id="acc3" class="hidden p-6 bg-gray-50 border-x border-b border-gray-200 rounded-b-xl text-gray-700 text-sm leading-relaxed">
+                            If you join a large table with a very small one, Spark can "broadcast" the small table to every executor node. This prevents a full shuffle of the large table, dramatically speeding up the join. <code>broadcast(small_df)</code>.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 rounded-2xl text-white shadow-xl relative overflow-hidden">
+                    <div class="relative z-10">
+                        <h4 class="text-xl font-bold mb-2 flex items-center gap-2">
+                            <i data-lucide="award"></i> Pro Interview Tip
+                        </h4>
+                        <p class="text-blue-100 leading-relaxed">
+                            When asked about performance tuning, mention <strong>"Data Skew"</strong>. Explain that if one partition has 90% of the data, one worker will lag, slowing down the entire job. Solutions include <strong>salting</strong> keys or increasing the <code>spark.sql.shuffle.partitions</code> parameter.
+                        </p>
+                    </div>
+                    <i data-lucide="lightbulb" class="absolute -bottom-4 -right-4 w-32 h-32 opacity-20"></i>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-20 border-t border-gray-200 bg-white py-12">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-gray-400 text-sm mb-4">© 2025 PySpark Masterclass. Created for educational purposes.</p>
+            <div class="flex justify-center gap-6">
+                <a href="#" class="text-gray-400 hover:text-blue-600"><i data-lucide="twitter" class="w-5 h-5"></i></a>
+                <a href="#" class="text-gray-400 hover:text-blue-600"><i data-lucide="github" class="w-5 h-5"></i></a>
+                <a href="#" class="text-gray-400 hover:text-blue-600"><i data-lucide="linkedin" class="w-5 h-5"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Ensure Lucide and other features are initialized after all resources load
+        window.addEventListener('load', function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            } else {
+                console.warn('Lucide library failed to load or is not yet available.');
+            }
+        });
+
+        // Tab Navigation Logic
+        function switchTab(tabId) {
+            // Hide all contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            // Remove active style from all tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected content
+            document.getElementById(tabId).classList.add('active');
+            // Style active tab
+            const activeTab = Array.from(document.querySelectorAll('.nav-tab')).find(tab => 
+                tab.innerText.toLowerCase().includes(tabId.split('-')[0]) || 
+                (tabId === 'intro' && tab.innerText.includes('What is'))
+            );
+            if(activeTab) activeTab.classList.add('active');
+
+            // Scroll to top of section
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Accordion Logic
+        function toggleAccordion(id) {
+            const content = document.getElementById(id);
+            const icon = document.getElementById('icon-' + id);
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                content.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+    </script>
+</body>
+</html>
