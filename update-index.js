@@ -46,6 +46,23 @@ const generateDescription = (filename) => {
     return `Comprehensive guide covering ${filenameToTitle(filename).toLowerCase()} concepts and best practices.`;
 };
 
+// Generate tag based on filename
+const generateTag = (filename) => {
+    const lowerName = filename.toLowerCase();
+    if (lowerName.includes('spark') || lowerName.includes('performance')) return 'Performance';
+    if (lowerName.includes('partition') || lowerName.includes('bucket') || lowerName.includes('data')) return 'Data';
+    if (lowerName.includes('security') || lowerName.includes('auth')) return 'Security';
+    if (lowerName.includes('api') || lowerName.includes('rest')) return 'API';
+    if (lowerName.includes('test') || lowerName.includes('qa')) return 'Testing';
+    if (lowerName.includes('deploy') || lowerName.includes('devops')) return 'DevOps';
+    if (lowerName.includes('design') || lowerName.includes('pattern')) return 'Design';
+    if (lowerName.includes('algorithm') || lowerName.includes('structure')) return 'Algorithms';
+    if (lowerName.includes('machine') || lowerName.includes('learning') || lowerName.includes('ai')) return 'ML/AI';
+    if (lowerName.includes('cloud') || lowerName.includes('aws') || lowerName.includes('azure')) return 'Cloud';
+    if (lowerName.includes('docker') || lowerName.includes('container')) return 'Containers';
+    return 'Concept';
+};
+
 // Scan components directory for HTML files
 const scanComponents = () => {
     try {
@@ -63,7 +80,8 @@ const scanComponents = () => {
             path: `components/${file}`,
             title: filenameToTitle(file),
             icon: getIconForComponent(file),
-            description: generateDescription(file)
+            description: generateDescription(file),
+            tag: generateTag(file)
         }));
     } catch (error) {
         console.error('Error scanning components:', error);
@@ -73,13 +91,15 @@ const scanComponents = () => {
 
 // Generate card HTML
 const generateCardHTML = (component) => {
-    return `            <a href="${component.path}" class="card">
+    return `            <a href="${component.path}" class="card" data-search-content="">
                 <span class="card-icon">${component.icon}</span>
                 <div class="card-title">${component.title}</div>
                 <p class="card-description">${component.description}</p>
                 <div class="card-footer">
-                    <span>Read More</span>
-                    <span class="arrow">→</span>
+                    <span class="card-action">
+                        Open Guide <span class="arrow">→</span>
+                    </span>
+                    <span class="card-tag">${component.tag}</span>
                 </div>
             </a>`;
 };
@@ -105,16 +125,10 @@ const updateIndex = () => {
         const cardsHTML = components.map(generateCardHTML).join('\n');
 
         // Replace the cards grid content
-        const cardsGridRegex = /(<div class="cards-grid" id="componentsGrid">)([\s\S]*?)(<\/div>)/;
+        const cardsGridRegex = /(<div class="cards-grid" id="componentsGrid">)([\s\S]*?)(<\/div>\s*<\/div>\s*<\/section>)/;
         indexContent = indexContent.replace(
             cardsGridRegex,
-            `$1\n            <!-- Cards will be dynamically inserted here -->\n${cardsHTML}\n        $3`
-        );
-
-        // Update the component count in the script section
-        indexContent = indexContent.replace(
-            /document\.getElementById\('componentCount'\)\.textContent = cards\.length;/,
-            `document.getElementById('componentCount').textContent = ${components.length};`
+            `$1\n                <!-- Cards will be dynamically inserted here -->\n${cardsHTML}\n            $3`
         );
 
         // Write updated content back to index.html
