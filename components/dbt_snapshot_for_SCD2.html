@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dbt Snapshots: SCD Type 2 Mastery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-active { border-bottom: 2px solid #ef4444; color: #ef4444; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(8px); }
+        pre { background: #1e293b; color: #f8fafc; padding: 1.5rem; border-radius: 0.75rem; overflow-x: auto; }
+        .step-circle { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: white; font-weight: bold; position: relative; z-index: 10; }
+        .line-connector { position: absolute; top: 20px; left: 40px; width: calc(100% - 40px); height: 2px; background: #e2e8f0; z-index: 0; }
+    </style>
+</head>
+<body class="bg-gray-50 text-slate-900 leading-relaxed">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-orange-600 p-1.5 rounded-lg">
+                    <i data-lucide="camera" class="text-white w-6 h-6"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-slate-800">dbt Snapshots <span class="text-orange-600">&</span> SCD 2</h1>
+            </div>
+            <div class="hidden md:flex items-center gap-2 text-sm font-medium text-slate-500 bg-gray-100 px-3 py-1.5 rounded-full">
+                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                Analytics Engineering
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-white border-b border-gray-200 sticky top-16 z-40">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex overflow-x-auto space-x-8 no-scrollbar py-1">
+                <button onclick="switchTab('what-is')" class="nav-tab py-4 text-sm font-semibold whitespace-nowrap tab-active" id="tab-what-is">Definition</button>
+                <button onclick="switchTab('why-use')" class="nav-tab py-4 text-sm font-semibold whitespace-nowrap text-slate-500" id="tab-why-use">Why & Use Cases</button>
+                <button onclick="switchTab('how-it-works')" class="nav-tab py-4 text-sm font-semibold whitespace-nowrap text-slate-500" id="tab-how-it-works">Lifecycle Diagram</button>
+                <button onclick="switchTab('example')" class="nav-tab py-4 text-sm font-semibold whitespace-nowrap text-slate-500" id="tab-example">Deep Dive Example</button>
+                <button onclick="switchTab('interview')" class="nav-tab py-4 text-sm font-semibold whitespace-nowrap text-slate-500" id="tab-interview">Interview Prep</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 py-12">
+        
+        <!-- Section: What is [Topic]? -->
+        <section id="what-is" class="tab-content active space-y-8">
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                <h2 class="text-3xl font-bold mb-4">What are dbt Snapshots?</h2>
+                <p class="text-lg text-slate-600 max-w-3xl">
+                    Snapshots are a specialized feature in dbt used to implement <strong>Slowly Changing Dimensions (SCD) Type 2</strong>. They allow you to capture the state of mutable source tables over time, ensuring historical context is never lost when upstream records are updated or deleted.
+                </p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="bg-blue-50 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
+                        <i data-lucide="clock" class="text-blue-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Time Machine</h3>
+                    <p class="text-slate-500">Unlike standard models, snapshots persist data versioning across dbt runs, acting as a historical ledger.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="bg-green-50 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
+                        <i data-lucide="database" class="text-green-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">SCD Type 2</h3>
+                    <p class="text-slate-500">Automatically adds <code>dbt_valid_from</code> and <code>dbt_valid_to</code> columns to track row-level validity.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="bg-purple-50 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
+                        <i data-lucide="refresh-cw" class="text-purple-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Change Data Capture</h3>
+                    <p class="text-slate-500">Implements CDC within the data warehouse without needing complex external tools or triggers.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Why & Use Cases -->
+        <section id="why-use" class="tab-content space-y-12">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="space-y-4">
+                    <h3 class="text-2xl font-bold flex items-center gap-2">
+                        <i data-lucide="arrow-right-left" class="text-orange-500"></i>
+                        The Evolution: Before vs. After
+                    </h3>
+                    <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                        <div class="p-6 bg-red-50 border-b border-red-100">
+                            <h4 class="font-bold text-red-700">Without Snapshots (Mutable Sources)</h4>
+                            <p class="text-sm text-red-600">Data reflects only the CURRENT state.</p>
+                        </div>
+                        <div class="p-6 space-y-4 text-sm text-slate-600">
+                            <div class="flex justify-between border-b pb-2">
+                                <span>User 101: Status = 'Trial'</span>
+                                <span class="text-slate-400">Jan 1st</span>
+                            </div>
+                            <div class="flex justify-between italic text-slate-400">
+                                <span>(Jan 15th: User upgrades)</span>
+                            </div>
+                            <div class="flex justify-between bg-yellow-50 p-2 rounded">
+                                <span>User 101: Status = 'Active'</span>
+                                <span class="font-medium text-slate-700">LATEST ONLY</span>
+                            </div>
+                        </div>
+                        <div class="p-6 bg-green-50 border-t border-green-100 mt-4">
+                            <h4 class="font-bold text-green-700">With dbt Snapshots (SCD Type 2)</h4>
+                            <p class="text-sm text-green-600">History is preserved row-by-row.</p>
+                        </div>
+                        <div class="p-6 space-y-2 text-sm font-mono bg-slate-50">
+                            <div class="grid grid-cols-4 gap-2 border-b pb-1 text-[10px] uppercase text-slate-400">
+                                <span>ID</span><span>Status</span><span>Valid From</span><span>Valid To</span>
+                            </div>
+                            <div class="grid grid-cols-4 gap-2 text-slate-500">
+                                <span>101</span><span>Trial</span><span>2024-01-01</span><span>2024-01-15</span>
+                            </div>
+                            <div class="grid grid-cols-4 gap-2 text-blue-600 font-bold">
+                                <span>101</span><span>Active</span><span>2024-01-15</span><span>NULL</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="text-2xl font-bold flex items-center gap-2">
+                        <i data-lucide="lightbulb" class="text-yellow-500"></i>
+                        Common Real-World Applications
+                    </h3>
+                    <ul class="space-y-4">
+                        <li class="flex gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                            <div class="flex-shrink-0 bg-blue-100 p-2 rounded-lg h-10 w-10 flex items-center justify-center">
+                                <i data-lucide="shopping-bag" class="text-blue-600 w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold">E-commerce Status Tracking</h4>
+                                <p class="text-slate-500 text-sm italic">"How long did orders stay in 'Processing' vs 'Shipped' last quarter?"</p>
+                            </div>
+                        </li>
+                        <li class="flex gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                            <div class="flex-shrink-0 bg-green-100 p-2 rounded-lg h-10 w-10 flex items-center justify-center">
+                                <i data-lucide="user" class="text-green-600 w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold">CRM Contact Changes</h4>
+                                <p class="text-slate-500 text-sm italic">"What was the lead's owner when the conversion happened?"</p>
+                            </div>
+                        </li>
+                        <li class="flex gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                            <div class="flex-shrink-0 bg-red-100 p-2 rounded-lg h-10 w-10 flex items-center justify-center">
+                                <i data-lucide="tag" class="text-red-600 w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold">Product Price Auditing</h4>
+                                <p class="text-slate-500 text-sm italic">"Report revenue using the price that was active at the time of sale."</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: How it Works -->
+        <section id="how-it-works" class="tab-content space-y-12">
+            <h3 class="text-2xl font-bold text-center">The dbt Snapshot Lifecycle</h3>
+            
+            <div class="relative hidden lg:flex items-start justify-between mt-12 mb-24 max-w-5xl mx-auto">
+                <div class="line-connector"></div>
+                
+                <div class="flex flex-col items-center w-1/4 text-center px-4">
+                    <div class="step-circle bg-orange-600 mb-4">1</div>
+                    <h4 class="font-bold mb-2">Initial Load</h4>
+                    <p class="text-xs text-slate-500">First run captures everything. Rows marked as valid from 'Now' until 'Infinity' (NULL).</p>
+                </div>
+
+                <div class="flex flex-col items-center w-1/4 text-center px-4">
+                    <div class="step-circle bg-orange-500 mb-4">2</div>
+                    <h4 class="font-bold mb-2">Change Detection</h4>
+                    <p class="text-xs text-slate-500">Subsequent runs compare source vs. snapshot using Unique Key + Strategy.</p>
+                </div>
+
+                <div class="flex flex-col items-center w-1/4 text-center px-4">
+                    <div class="step-circle bg-orange-400 mb-4">3</div>
+                    <h4 class="font-bold mb-2">Invalidation</h4>
+                    <p class="text-xs text-slate-500">If a change is found, the existing row's <code>dbt_valid_to</code> is updated to the current time.</p>
+                </div>
+
+                <div class="flex flex-col items-center w-1/4 text-center px-4">
+                    <div class="step-circle bg-green-500 mb-4">4</div>
+                    <h4 class="font-bold mb-2">Insertion</h4>
+                    <p class="text-xs text-slate-500">A new row with updated values is inserted. History is now "Stacked".</p>
+                </div>
+            </div>
+
+            <!-- Mobile View Process -->
+            <div class="lg:hidden space-y-8">
+                <div class="flex gap-4 items-start">
+                    <div class="w-8 h-8 rounded-full bg-orange-600 flex-shrink-0 flex items-center justify-center text-white font-bold">1</div>
+                    <div><h4 class="font-bold">Initial Load</h4><p class="text-sm text-slate-500">Full capture of current state.</p></div>
+                </div>
+                <div class="flex gap-4 items-start">
+                    <div class="w-8 h-8 rounded-full bg-orange-500 flex-shrink-0 flex items-center justify-center text-white font-bold">2</div>
+                    <div><h4 class="font-bold">Detect</h4><p class="text-sm text-slate-500">Check for updates using Timestamp or Check columns.</p></div>
+                </div>
+                <div class="flex gap-4 items-start">
+                    <div class="w-8 h-8 rounded-full bg-orange-400 flex-shrink-0 flex items-center justify-center text-white font-bold">3</div>
+                    <div><h4 class="font-bold">Invalidate & Insert</h4><p class="text-sm text-slate-500">"Retire" the old row and start the new one.</p></div>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 text-white p-8 rounded-2xl">
+                <h4 class="text-xl font-bold mb-4 text-orange-400">Core Strategies</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="border-l-4 border-blue-500 pl-4">
+                        <h5 class="font-bold mb-2">Timestamp Strategy <span class="text-[10px] bg-blue-500 px-2 py-0.5 rounded ml-2 uppercase">Recommended</span></h5>
+                        <p class="text-sm text-slate-400">Uses an <code>updated_at</code> column. dbt only snapshots if <code>source.updated_at > snapshot.updated_at</code>.</p>
+                    </div>
+                    <div class="border-l-4 border-yellow-500 pl-4">
+                        <h5 class="font-bold mb-2">Check Strategy</h5>
+                        <p class="text-sm text-slate-400">Compares specific column values. Useful when source systems don't provide reliable update timestamps.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Example -->
+        <section id="example" class="tab-content space-y-8">
+            <div class="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm">
+                <h3 class="text-2xl font-bold mb-6">Technical Implementation</h3>
+                
+                <div class="space-y-6">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 block">1. File Structure</span>
+                        <p class="text-slate-600 mb-2">Snapshots live in the <code>snapshots/</code> directory of your dbt project.</p>
+                    </div>
+
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 block">2. SQL Snapshot Block</span>
+                        <pre><code>{% snapshot orders_snapshot %}
+
+{{
+    config(
+      target_schema='snapshots',
+      unique_key='id',
+      strategy='timestamp',
+      updated_at='updated_at',
+      invalidate_hard_deletes=True,
+    )
+}}
+
+select * from {{ source('main', 'orders') }}
+
+{% endsnapshot %}</code></pre>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                        <div class="p-6 bg-slate-50 rounded-xl border border-slate-200">
+                            <h4 class="font-bold mb-2 flex items-center gap-2">
+                                <i data-lucide="file-code" class="w-4 h-4"></i> Config Parameters
+                            </h4>
+                            <ul class="text-sm space-y-2 text-slate-600">
+                                <li><strong>target_schema:</strong> The DB schema where history is stored.</li>
+                                <li><strong>unique_key:</strong> Primary key of source row.</li>
+                                <li><strong>invalidate_hard_deletes:</strong> Captures if a row is deleted in source.</li>
+                            </ul>
+                        </div>
+                        <div class="p-6 bg-slate-50 rounded-xl border border-slate-200">
+                            <h4 class="font-bold mb-2 flex items-center gap-2">
+                                <i data-lucide="database" class="w-4 h-4"></i> Auto-Generated Columns
+                            </h4>
+                            <ul class="text-sm space-y-2 text-slate-600">
+                                <li><strong>dbt_scd_id:</strong> Unique hash for this row version.</li>
+                                <li><strong>dbt_valid_from:</strong> Start of this version.</li>
+                                <li><strong>dbt_valid_to:</strong> End of this version (NULL = current).</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Interview Prep -->
+        <section id="interview" class="tab-content space-y-8">
+            <h3 class="text-3xl font-bold text-center mb-12">Interview Flashcards</h3>
+
+            <div class="max-w-3xl mx-auto space-y-4">
+                <!-- Question 1 -->
+                <div class="group">
+                    <button onclick="toggleAccordion('q1')" class="w-full flex items-center justify-between p-6 bg-white rounded-xl border border-gray-200 hover:border-orange-500 transition-colors">
+                        <span class="font-semibold text-lg">What is the main difference between SCD Type 1 and SCD Type 2?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 transition-transform" id="icon-q1"></i>
+                    </button>
+                    <div id="q1" class="hidden p-6 bg-gray-50 rounded-b-xl border-x border-b border-gray-200 mt-[-1px]">
+                        <p class="text-slate-600"><strong>SCD Type 1</strong> overwrites existing records, losing history (only current state exists). <strong>SCD Type 2</strong> (which dbt snapshots implement) tracks history by creating new rows for changes, using validity timestamps to differentiate versions.</p>
+                    </div>
+                </div>
+
+                <!-- Question 2 -->
+                <div class="group">
+                    <button onclick="toggleAccordion('q2')" class="w-full flex items-center justify-between p-6 bg-white rounded-xl border border-gray-200 hover:border-orange-500 transition-colors">
+                        <span class="font-semibold text-lg">When should I use the 'Check' strategy instead of 'Timestamp'?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 transition-transform" id="icon-q2"></i>
+                    </button>
+                    <div id="q2" class="hidden p-6 bg-gray-50 rounded-b-xl border-x border-b border-gray-200 mt-[-1px]">
+                        <p class="text-slate-600">Use the <strong>Check</strong> strategy when the source table lacks a reliable <code>updated_at</code> timestamp, or when you only want to trigger a snapshot if specific columns change (ignoring no-op metadata updates).</p>
+                    </div>
+                </div>
+
+                <!-- Question 3 -->
+                <div class="group">
+                    <button onclick="toggleAccordion('q3')" class="w-full flex items-center justify-between p-6 bg-white rounded-xl border border-gray-200 hover:border-orange-500 transition-colors">
+                        <span class="font-semibold text-lg">How do you query a snapshot to get only the latest records?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 transition-transform" id="icon-q3"></i>
+                    </button>
+                    <div id="q3" class="hidden p-6 bg-gray-50 rounded-b-xl border-x border-b border-gray-200 mt-[-1px]">
+                        <p class="text-slate-600">Filter for rows where <code>dbt_valid_to</code> is <strong>NULL</strong>. In dbt, current records are always marked with a NULL end date unless a specific high-water-mark date is configured.</p>
+                    </div>
+                </div>
+
+                <!-- Question 4 -->
+                <div class="group">
+                    <button onclick="toggleAccordion('q4')" class="w-full flex items-center justify-between p-6 bg-white rounded-xl border border-gray-200 hover:border-orange-500 transition-colors">
+                        <span class="font-semibold text-lg">Can I re-run a snapshot to capture history I missed?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 transition-transform" id="icon-q4"></i>
+                    </button>
+                    <div id="q4" class="hidden p-6 bg-gray-50 rounded-b-xl border-x border-b border-gray-200 mt-[-1px]">
+                        <p class="text-slate-600 text-red-600 font-medium">No. Snapshots are non-idempotent. They only capture the state of the data at the exact moment the `dbt snapshot` command is executed. If data changed and was updated again between runs, the middle state is lost.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-12 bg-orange-50 p-6 rounded-2xl border border-orange-100 max-w-3xl mx-auto flex gap-4">
+                <div class="bg-orange-500 p-3 rounded-xl h-12 w-12 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="terminal" class="text-white"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-orange-900">Pro Tip: Snapshot Source, not Models</h4>
+                    <p class="text-sm text-orange-800">Always point snapshots at your raw sources. If you snapshot a transformed model and your transformation logic changes, it may trigger false "updates" in your history table, corrupting the audit trail.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 py-12">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-slate-400 text-sm">Interactive Guide Built for Analytics Engineers</p>
+            <div class="mt-4 flex justify-center gap-6 text-slate-300">
+                <i data-lucide="github" class="w-5 h-5 cursor-pointer hover:text-slate-600"></i>
+                <i data-lucide="linkedin" class="w-5 h-5 cursor-pointer hover:text-slate-600"></i>
+                <i data-lucide="twitter" class="w-5 h-5 cursor-pointer hover:text-slate-600"></i>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Lucide Icons once the window has fully loaded
+        window.addEventListener('load', function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Update Tab UI
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('tab-active');
+                tab.classList.add('text-slate-500');
+            });
+
+            // Show selected tab content
+            document.getElementById(tabId).classList.add('active');
+            
+            // Highlight selected tab button
+            const activeTab = document.getElementById('tab-' + tabId);
+            activeTab.classList.add('tab-active');
+            activeTab.classList.remove('text-slate-500');
+
+            // Scroll to top of content
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Accordion Logic
+        function toggleAccordion(id) {
+            const el = document.getElementById(id);
+            const icon = document.getElementById('icon-' + id);
+            
+            if (el.classList.contains('hidden')) {
+                el.classList.remove('hidden');
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                el.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+    </script>
+</body>
+</html>
