@@ -540,9 +540,369 @@
         .fade-in {
             animation: fadeInUp 0.5s ease forwards;
         }
+
+        /* Sidebar Styles */
+        .sidebar-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            border: 2px solid var(--border);
+            background: white;
+            color: var(--text-dark);
+            font-size: 1.5em;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-toggle:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            height: 100vh;
+            background: white;
+            border-right: 2px solid var(--border);
+            box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            z-index: 99;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .sidebar-header h3 {
+            font-size: 1.2em;
+            color: var(--text-dark);
+            margin: 0;
+        }
+
+        .sidebar-close {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: var(--text-light);
+            padding: 0 4px;
+            display: none;
+            transition: color 0.2s ease;
+        }
+
+        .sidebar-close:hover {
+            color: var(--text-dark);
+        }
+
+        .sidebar-nav {
+            padding: 12px 0;
+        }
+
+        .sidebar-item {
+            list-style: none;
+        }
+
+        .sidebar-folder {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-dark);
+            font-weight: 600;
+            border-right: 3px solid transparent;
+        }
+
+        .sidebar-folder:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-right-color: var(--primary);
+        }
+
+        .sidebar-folder-icon {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .sidebar-folder-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            background: rgba(102, 126, 234, 0.12);
+            border-radius: 4px;
+            transition: transform 0.2s ease;
+            font-size: 0.8em;
+            color: var(--primary);
+        }
+
+        .sidebar-folder.expanded .sidebar-folder-toggle {
+            transform: rotate(90deg);
+        }
+
+        .sidebar-files {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .sidebar-folder.expanded + .sidebar-files {
+            max-height: 500px;
+        }
+
+        .sidebar-file {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px 10px 52px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-light);
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-file:hover {
+            background: rgba(102, 126, 234, 0.08);
+            color: var(--primary);
+            border-left-color: var(--primary);
+        }
+
+        .sidebar-file-icon {
+            font-size: 1em;
+        }
+
+        .sidebar-file-name {
+            font-size: 0.9em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Main content shift when sidebar is open */
+        body.sidebar-open {
+            margin-left: 0;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar-toggle {
+                display: flex;
+            }
+
+            .sidebar-close {
+                display: block;
+            }
+
+            body {
+                overflow-x: hidden;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .sidebar {
+                transform: translateX(0);
+                box-shadow: none;
+            }
+
+            .sidebar-toggle {
+                display: none !important;
+            }
+
+            .sidebar-close {
+                display: none !important;
+            }
+
+            body {
+                margin-left: 280px;
+            }
+
+            .hero {
+                margin-left: -280px;
+            }
+
+            .category-nav-section {
+                margin-left: -280px;
+            }
+
+            .search-section {
+                margin-left: 0;
+            }
+
+            .content-section {
+                margin-left: 0;
+            }
+
+            .footer {
+                margin-left: -280px;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Sidebar Toggle Button -->
+    <button id="sidebarToggle" class="sidebar-toggle" title="Toggle Navigation">☰</button>
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <h3>📂 Topics</h3>
+            <button id="closeSidebar" class="sidebar-close">✕</button>
+        </div>
+        <nav id="sidebarNav" class="sidebar-nav">
+            <ul style="list-style: none; padding: 0; margin: 0;">
+            <li class="sidebar-item">
+                <div class="sidebar-folder expanded">
+                    <div class="sidebar-folder-icon">
+                        <span class="sidebar-folder-toggle">▶</span>
+                        <span>📁 Data</span>
+                        <span class="folder-count" style="font-size: 0.8em; color: var(--text-light); margin-left: auto;">(4)</span>
+                    </div>
+                </div>
+                <ul class="sidebar-files">
+                    <li class="sidebar-item">
+                        <a class="sidebar-file" data-href="components/data/Apache_Parquet_Visualization.html">
+                            <span class="sidebar-file-icon">📄</span>
+                            <span class="sidebar-file-name">Apache Parquet Visualization</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a class="sidebar-file" data-href="components/data/Data_Lakehouse_Architecture.html">
+                            <span class="sidebar-file-icon">💾</span>
+                            <span class="sidebar-file-name">Data Lakehouse Architecture</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a class="sidebar-file" data-href="components/data/Dimensional_Modeling_Guide.html">
+                            <span class="sidebar-file-icon">📄</span>
+                            <span class="sidebar-file-name">Dimensional Modeling Guide</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a class="sidebar-file" data-href="components/data/Partitioning_Bucketing_Pruning.html">
+                            <span class="sidebar-file-icon">🔧</span>
+                            <span class="sidebar-file-name">Partitioning Bucketing Pruning</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="sidebar-item">
+                <div class="sidebar-folder ">
+                    <div class="sidebar-folder-icon">
+                        <span class="sidebar-folder-toggle">▶</span>
+                        <span>📁 Dbt</span>
+                        <span class="folder-count" style="font-size: 0.8em; color: var(--text-light); margin-left: auto;">(2)</span>
+                    </div>
+                </div>
+                <ul class="sidebar-files">
+                    <li class="sidebar-item">
+                        <a class="sidebar-file" data-href="components/dbt/dbt_quick_prep.html">
+                            <span class="sidebar-file-icon">📄</span>
+                            <span class="sidebar-file-name">Dbt Quick Prep</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a class="sidebar-file" data-href="components/dbt/dbt_snapshot_for_SCD2.html">
+                            <span class="sidebar-file-icon">📄</span>
+                            <span class="sidebar-file-name">Dbt Snapshot For SCD2</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="sidebar-item">
+                <div class="sidebar-folder ">
+                    <div class="sidebar-folder-icon">
+                        <span class="sidebar-folder-toggle">▶</span>
+                        <span>📁 General</span>
+                        <span class="folder-count" style="font-size: 0.8em; color: var(--text-light); margin-left: auto;">(1)</span>
+                    </div>
+                </div>
+                <ul class="sidebar-files">
+                    <li class="sidebar-item">
+                        <a class="sidebar-file" data-href="components/General/temp.html">
+                            <span class="sidebar-file-icon">📄</span>
+                            <span class="sidebar-file-name">Temp</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="sidebar-item">
+                <div class="sidebar-folder ">
+                    <div class="sidebar-folder-icon">
+                        <span class="sidebar-folder-toggle">▶</span>
+                        <span>📁 Kafka</span>
+                        <span class="folder-count" style="font-size: 0.8em; color: var(--text-light); margin-left: auto;">(1)</span>
+                    </div>
+                </div>
+                <ul class="sidebar-files">
+                    <li class="sidebar-item">
+                        <a class="sidebar-file" data-href="components/kafka/Kafka_Fault_Tolerance.html">
+                            <span class="sidebar-file-icon">📄</span>
+                            <span class="sidebar-file-name">Kafka Fault Tolerance</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="sidebar-item">
+                <div class="sidebar-folder ">
+                    <div class="sidebar-folder-icon">
+                        <span class="sidebar-folder-toggle">▶</span>
+                        <span>📁 Spark</span>
+                        <span class="folder-count" style="font-size: 0.8em; color: var(--text-light); margin-left: auto;">(3)</span>
+                    </div>
+                </div>
+                <ul class="sidebar-files">
+                    <li class="sidebar-item">
+                        <a class="sidebar-file" data-href="components/spark/ PySpark_Watermarking.html">
+                            <span class="sidebar-file-icon">⚡</span>
+                            <span class="sidebar-file-name"> PySpark Watermarking</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a class="sidebar-file" data-href="components/spark/PySpark_Master_Guide.html">
+                            <span class="sidebar-file-icon">⚡</span>
+                            <span class="sidebar-file-name">PySpark Master Guide</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a class="sidebar-file" data-href="components/spark/spark_Performance_optimiser.html">
+                            <span class="sidebar-file-icon">⚡</span>
+                            <span class="sidebar-file-name">Spark Performance Optimiser</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            </ul>
+        </nav>
+    </aside>
+
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-content">
@@ -686,6 +1046,25 @@
             </a>
                 </div>
             </div>
+            <div class="topic-section" data-category="General">
+                <div class="topic-header">
+                    <h3 class="topic-title">General</h3>
+                    <span class="topic-count">1 topic</span>
+                </div>
+                <div class="cards-grid topic-grid">
+            <a href="components/General/temp.html" class="card" data-search-content="" data-category="General">
+                <span class="card-icon">📄</span>
+                <div class="card-title">Temp</div>
+                <p class="card-description">Comprehensive guide covering temp concepts and best practices.</p>
+                <div class="card-footer">
+                    <span class="card-action">
+                        Open Guide <span class="arrow">→</span>
+                    </span>
+                    <span class="card-tag">Concept</span>
+                </div>
+            </a>
+                </div>
+            </div>
             <div class="topic-section" data-category="Kafka">
                 <div class="topic-header">
                     <h3 class="topic-title">Kafka</h3>
@@ -763,6 +1142,89 @@
     </footer>
 
     <script>
+        // Sidebar functionality
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const closeSidebar = document.getElementById('closeSidebar');
+
+        // Toggle sidebar open/close
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+            document.body.classList.toggle('sidebar-open');
+        }
+
+        // Close sidebar
+        function closeSidebarMenu() {
+            sidebar.classList.remove('open');
+            document.body.classList.remove('sidebar-open');
+        }
+
+        // Sidebar event listeners
+        sidebarToggle.addEventListener('click', toggleSidebar);
+        closeSidebar.addEventListener('click', closeSidebarMenu);
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(e.target) && 
+                !sidebarToggle.contains(e.target) &&
+                sidebar.classList.contains('open')) {
+                closeSidebarMenu();
+            }
+        });
+
+        // Handle sidebar folder expand/collapse
+        function setupSidebarInteractions() {
+            const folders = document.querySelectorAll('.sidebar-folder');
+            
+            folders.forEach(folder => {
+                folder.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    folder.classList.toggle('expanded');
+                });
+            });
+
+            const files = document.querySelectorAll('.sidebar-file');
+            files.forEach(file => {
+                file.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const href = file.getAttribute('data-href');
+                    if (href) {
+                        // Find the corresponding card on the home page
+                        const card = document.querySelector(`.card[href="${href}"]`);
+                        if (card) {
+                            // Get the card's category
+                            const category = card.getAttribute('data-category');
+                            
+                            // Find and expand the topic section if it's collapsed
+                            const topicSection = document.querySelector(`.topic-section[data-category="${category}"]`);
+                            if (topicSection && topicSection.classList.contains('collapsed')) {
+                                topicSection.classList.remove('collapsed');
+                            }
+                            
+                            // Close sidebar on mobile
+                            closeSidebarMenu();
+                            
+                            // Small delay to allow expansion animation
+                            setTimeout(() => {
+                                // Scroll to the card with smooth behavior
+                                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                
+                                // Add a highlight effect
+                                card.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.5)';
+                                card.style.transition = 'box-shadow 0.3s ease';
+                                
+                                // Remove highlight after 2 seconds
+                                setTimeout(() => {
+                                    card.style.boxShadow = '';
+                                }, 2000);
+                            }, 300);
+                        }
+                    }
+                });
+            });
+        }
+
         // Cache for component content
         const contentCache = {};
         
@@ -986,6 +1448,7 @@
             buildCategoryNav();
             updateSectionVisibility();
             setActiveCategoryChip('all');
+            setupSidebarInteractions();
             
             let searchTimeout;
             searchBox.addEventListener('input', () => {

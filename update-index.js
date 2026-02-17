@@ -156,6 +156,51 @@ ${cardsHTML}
             </div>`;
 };
 
+// Generate sidebar navigation HTML
+const generateSidebarHTML = (components) => {
+    const grouped = components.reduce((acc, component) => {
+        acc[component.category] = acc[component.category] || [];
+        acc[component.category].push(component);
+        return acc;
+    }, {});
+
+    Object.keys(grouped).forEach(category => {
+        grouped[category].sort((a, b) => a.title.localeCompare(b.title));
+    });
+
+    const sortedCategories = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+    
+    let sidebarHTML = '';
+    sortedCategories.forEach((category, index) => {
+        const isFirstFolder = index === 0;
+        const expandedClass = isFirstFolder ? 'expanded' : '';
+        const filesHTML = grouped[category]
+            .map(comp => `                    <li class="sidebar-item">
+                        <a class="sidebar-file" data-href="${comp.path}">
+                            <span class="sidebar-file-icon">${comp.icon}</span>
+                            <span class="sidebar-file-name">${comp.title}</span>
+                        </a>
+                    </li>`)
+            .join('\n');
+
+        sidebarHTML += `            <li class="sidebar-item">
+                <div class="sidebar-folder ${expandedClass}">
+                    <div class="sidebar-folder-icon">
+                        <span class="sidebar-folder-toggle">▶</span>
+                        <span>📁 ${category}</span>
+                        <span class="folder-count" style="font-size: 0.8em; color: var(--text-light); margin-left: auto;">(${grouped[category].length})</span>
+                    </div>
+                </div>
+                <ul class="sidebar-files">
+${filesHTML}
+                </ul>
+            </li>
+`;
+    });
+
+    return sidebarHTML;
+};
+
 // Update index.html
 const updateIndex = () => {
     try {
@@ -188,6 +233,15 @@ const updateIndex = () => {
             .map(category => generateSectionHTML(category, grouped[category]))
             .join('\n');
 
+        // Generate and update sidebar
+        const sidebarHTML = generateSidebarHTML(components);
+        const sidebarRegex = /(<nav id="sidebarNav" class="sidebar-nav">)([\s\S]*?)(<\/nav>)/;
+        indexContent = indexContent.replace(
+            sidebarRegex,
+            `$1\n            <ul style="list-style: none; padding: 0; margin: 0;">\n${sidebarHTML}            </ul>\n        $3`
+        );
+
+        // Update sections
         const sectionsRegex = /(<div id="componentsSections">)([\s\S]*?)(<\/div>\s*<\/div>\s*<\/section>)/;
         indexContent = indexContent.replace(
             sectionsRegex,
@@ -199,6 +253,7 @@ const updateIndex = () => {
         
         console.log('\n✅ Index.html updated successfully!');
         console.log(`📊 Total components: ${components.length}`);
+        console.log(`📁 Total categories: ${sortedCategories.length}`);
     } catch (error) {
         console.error('❌ Error updating index:', error.message);
         process.exit(1);
