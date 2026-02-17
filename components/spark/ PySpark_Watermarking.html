@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark Watermarking: Managing Late Data</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .step-line::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            width: 2rem;
+            height: 2px;
+            background: #e2e8f0;
+            z-index: -1;
+        }
+        @media (max-width: 768px) {
+            .step-line::after { display: none; }
+        }
+        code { font-family: 'Fira Code', monospace; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 antialiased">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-3">
+                    <div class="bg-blue-600 p-2 rounded-lg">
+                        <i class="fas fa-stream text-white"></i>
+                    </div>
+                    <h1 class="text-xl font-bold tracking-tight text-gray-900">PySpark <span class="text-blue-600">Watermarking</span></h1>
+                </div>
+                <div class="hidden md:block text-sm font-medium text-gray-500">
+                    Structured Streaming Guide
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Navigation Tabs -->
+        <nav class="flex flex-wrap gap-2 mb-8 bg-gray-100 p-1.5 rounded-xl self-start w-fit">
+            <button onclick="showTab('what-is')" class="tab-btn active px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 bg-white shadow-sm text-blue-600" data-tab="what-is">Definition</button>
+            <button onclick="showTab('why')" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-gray-600 hover:text-gray-900" data-tab="why">Why & Use Cases</button>
+            <button onclick="showTab('how')" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-gray-600 hover:text-gray-900" data-tab="how">How it Works</button>
+            <button onclick="showTab('example')" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-gray-600 hover:text-gray-900" data-tab="example">Example</button>
+            <button onclick="showTab('interview')" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-gray-600 hover:text-gray-900" data-tab="interview">Interview Prep</button>
+        </nav>
+
+        <!-- Section: What is Watermarking -->
+        <section id="what-is" class="tab-content active space-y-8 animate-in fade-in duration-500">
+            <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                <h2 class="text-3xl font-extrabold mb-4">What is Watermarking?</h2>
+                <p class="text-lg text-gray-600 leading-relaxed mb-8">
+                    In PySpark Structured Streaming, a **Watermark** is a threshold used to manage late-arriving data. It defines how long the engine should wait for data that has an event-time timestamp earlier than the current maximum event time seen so far. It allows the system to balance accuracy with resource management by eventually "closing" old time windows.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="p-6 bg-blue-50 rounded-2xl border border-blue-100">
+                        <i class="fas fa-clock text-blue-600 text-2xl mb-4"></i>
+                        <h3 class="font-bold text-lg mb-2">Event Time Focus</h3>
+                        <p class="text-sm text-gray-600">Processes data based on when it actually happened, not when it arrived at the server.</p>
+                    </div>
+                    <div class="p-6 bg-emerald-50 rounded-2xl border border-emerald-100">
+                        <i class="fas fa-trash-alt text-emerald-600 text-2xl mb-4"></i>
+                        <h3 class="font-bold text-lg mb-2">State Cleanup</h3>
+                        <p class="text-sm text-gray-600">Automatically drops old aggregate state from memory to prevent OutOfMemory errors.</p>
+                    </div>
+                    <div class="p-6 bg-purple-50 rounded-2xl border border-purple-100">
+                        <i class="fas fa-bolt text-purple-600 text-2xl mb-4"></i>
+                        <h3 class="font-bold text-lg mb-2">Grace Period</h3>
+                        <p class="text-sm text-gray-600">Defines a specific 'delay threshold' (e.g., 10 mins) to accept delayed logs.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Why & Use Cases -->
+        <section id="why" class="tab-content space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Before vs After -->
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                    <h3 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                        <i class="fas fa-balance-scale text-gray-400"></i> The Comparison
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="p-4 rounded-xl border-l-4 border-red-400 bg-red-50">
+                            <h4 class="font-bold text-red-800">Without Watermarking</h4>
+                            <p class="text-sm text-red-700">The streaming engine keeps all windowed aggregates in memory forever, as it doesn't know if more late data will arrive. Eventually, the application crashes.</p>
+                        </div>
+                        <div class="flex justify-center py-2">
+                            <i class="fas fa-arrow-down text-gray-300"></i>
+                        </div>
+                        <div class="p-4 rounded-xl border-l-4 border-green-400 bg-green-50">
+                            <h4 class="font-bold text-green-800">With Watermarking</h4>
+                            <p class="text-sm text-green-700">The engine calculates a "moving floor" (Max Event Time - Threshold). Any data older than this floor is ignored, and its corresponding state is purged.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Use Cases -->
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                    <h3 class="text-2xl font-bold mb-6">Common Applications</h3>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-4">
+                            <div class="mt-1 bg-blue-100 text-blue-600 rounded-full p-1.5"><i class="fas fa-check text-xs"></i></div>
+                            <div>
+                                <h4 class="font-semibold">IoT Sensor Monitoring</h4>
+                                <p class="text-sm text-gray-500">Handling sensors that go offline and upload packets in batches 15 minutes late.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-4">
+                            <div class="mt-1 bg-blue-100 text-blue-600 rounded-full p-1.5"><i class="fas fa-check text-xs"></i></div>
+                            <div>
+                                <h4 class="font-semibold">Ad-Tech Click Tracking</h4>
+                                <p class="text-sm text-gray-500">Aggregating clicks within a 1-hour window where network latency varies across global users.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-4">
+                            <div class="mt-1 bg-blue-100 text-blue-600 rounded-full p-1.5"><i class="fas fa-check text-xs"></i></div>
+                            <div>
+                                <h4 class="font-semibold">E-commerce Flash Sales</h4>
+                                <p class="text-sm text-gray-500">Real-time inventory updates allowing for small delays in payment confirmation events.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: How it Works -->
+        <section id="how" class="tab-content space-y-8">
+            <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                <h3 class="text-2xl font-bold mb-10 text-center">The Watermark Lifecycle</h3>
+                
+                <div class="flex flex-col md:flex-row justify-between items-center gap-12 relative">
+                    <!-- Step 1 -->
+                    <div class="flex flex-col items-center text-center space-y-4 w-full md:w-1/4 relative step-line">
+                        <div class="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-200">1</div>
+                        <div>
+                            <h4 class="font-bold">Max Event Time</h4>
+                            <p class="text-xs text-gray-500 mt-1">Engine tracks the highest timestamp seen in the data so far.</p>
+                        </div>
+                    </div>
+                    <!-- Step 2 -->
+                    <div class="flex flex-col items-center text-center space-y-4 w-full md:w-1/4 relative step-line">
+                        <div class="w-16 h-16 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-100">2</div>
+                        <div>
+                            <h4 class="font-bold">Subtract Threshold</h4>
+                            <p class="text-xs text-gray-500 mt-1">Watermark = Max Event Time - <i>Delay Allowed</i>.</p>
+                        </div>
+                    </div>
+                    <!-- Step 3 -->
+                    <div class="flex flex-col items-center text-center space-y-4 w-full md:w-1/4 relative step-line">
+                        <div class="w-16 h-16 rounded-full bg-blue-400 text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-100">3</div>
+                        <div>
+                            <h4 class="font-bold">Filter Input</h4>
+                            <p class="text-xs text-gray-500 mt-1">New records with timestamp < Watermark are dropped immediately.</p>
+                        </div>
+                    </div>
+                    <!-- Step 4 -->
+                    <div class="flex flex-col items-center text-center space-y-4 w-full md:w-1/4">
+                        <div class="w-16 h-16 rounded-full bg-blue-300 text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-50">4</div>
+                        <div>
+                            <h4 class="font-bold">Purge State</h4>
+                            <p class="text-xs text-gray-500 mt-1">Windows where End-Time < Watermark are deleted from memory.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-16 p-6 bg-gray-50 rounded-2xl border border-gray-200">
+                    <h4 class="font-bold mb-4 text-gray-700 uppercase tracking-wider text-sm"><i class="fas fa-info-circle mr-2"></i>Key Rule</h4>
+                    <p class="text-sm italic text-gray-600 leading-relaxed">
+                        The watermark is updated <b>at the end of each micro-batch</b>. This means the watermark used to filter data in Batch N is actually the one calculated from Batch N-1. This behavior ensures stability in streaming jobs.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Example -->
+        <section id="example" class="tab-content space-y-8">
+            <div class="bg-gray-900 rounded-3xl shadow-xl overflow-hidden">
+                <div class="p-4 bg-gray-800 border-b border-gray-700 flex justify-between items-center">
+                    <div class="flex gap-2">
+                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                    </div>
+                    <span class="text-xs text-gray-400 font-mono">watermarking_example.py</span>
+                </div>
+                <div class="p-8">
+                    <pre class="text-sm md:text-base text-gray-300 overflow-x-auto"><code class="language-python">from pyspark.sql import SparkSession
+from pyspark.sql.functions import window, col
+
+spark = SparkSession.builder.appName("WatermarkExample").getOrCreate()
+
+# 1. Read Streaming Data
+# Schema: { "timestamp": "2023-10-01 12:00:00", "device_id": "A1", "value": 10 }
+df = spark.readStream.format("json").load("/path/to/data")
+
+# 2. Apply Watermarking
+# We allow data to be late by 10 minutes
+watermarked_df = df.withWatermark("timestamp", "10 minutes")
+
+# 3. Group by Window and Device
+# Window duration: 5 mins, Slide: 5 mins (Tumbling)
+windowed_counts = watermarked_df.groupBy(
+    window(col("timestamp"), "5 minutes"),
+    col("device_id")
+).count()
+
+# 4. Start the Stream
+query = windowed_counts.writeStream \
+    .outputMode("append") \
+    .format("console") \
+    .start()
+
+query.awaitTermination()</code></pre>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+                <h4 class="font-bold mb-4">The Logic Walkthrough</h4>
+                <div class="space-y-4 text-sm text-gray-600">
+                    <p>• <strong>withWatermark("timestamp", "10 minutes")</strong>: Informs Spark that events can be up to 10 minutes late relative to the max event time seen.</p>
+                    <p>• <strong>Output Mode "append"</strong>: Required for most watermark operations to ensure rows are only emitted once the system is sure no more data for that window will arrive.</p>
+                    <p>• <strong>Cleanup</strong>: If the current watermark is 12:15, and a window covers 12:00 to 12:05, Spark will safely delete that window's data from memory because 12:05 is less than 12:15.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Interview Prep -->
+        <section id="interview" class="tab-content space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 space-y-4">
+                    <h3 class="text-2xl font-bold mb-6">Common Interview Questions</h3>
+                    
+                    <!-- Accordion Item 1 -->
+                    <div class="border border-gray-200 rounded-2xl overflow-hidden bg-white">
+                        <button onclick="toggleAccordion(1)" class="w-full flex justify-between items-center p-5 text-left hover:bg-gray-50 transition-colors">
+                            <span class="font-semibold text-gray-800">1. What is the difference between processing time and event time?</span>
+                            <i id="icon-1" class="fas fa-chevron-down text-gray-400"></i>
+                        </button>
+                        <div id="ans-1" class="hidden p-5 pt-0 text-sm text-gray-600 border-t border-gray-50">
+                            Processing time is the clock time on the machine running the Spark job. Event time is the timestamp embedded within the data itself (when the record was generated). Watermarking only works with event time.
+                        </div>
+                    </div>
+
+                    <!-- Accordion Item 2 -->
+                    <div class="border border-gray-200 rounded-2xl overflow-hidden bg-white">
+                        <button onclick="toggleAccordion(2)" class="w-full flex justify-between items-center p-5 text-left hover:bg-gray-50 transition-colors">
+                            <span class="font-semibold text-gray-800">2. Why can't we use 'Update' mode with some watermark queries?</span>
+                            <i id="icon-2" class="fas fa-chevron-down text-gray-400"></i>
+                        </button>
+                        <div id="ans-2" class="hidden p-5 pt-0 text-sm text-gray-600 border-t border-gray-50">
+                            Actually, you can use Update mode, but it will output intermediate results. <strong>Append</strong> mode is the most common with watermarking because it guarantees that a row is only written once the watermark has passed the end of the window, ensuring finality.
+                        </div>
+                    </div>
+
+                    <!-- Accordion Item 3 -->
+                    <div class="border border-gray-200 rounded-2xl overflow-hidden bg-white">
+                        <button onclick="toggleAccordion(3)" class="w-full flex justify-between items-center p-5 text-left hover:bg-gray-50 transition-colors">
+                            <span class="font-semibold text-gray-800">3. What happens if multiple event-time columns are present?</span>
+                            <i id="icon-3" class="fas fa-chevron-down text-gray-400"></i>
+                        </button>
+                        <div id="ans-3" class="hidden p-5 pt-0 text-sm text-gray-600 border-t border-gray-50">
+                            You must call <code>withWatermark</code> on the specific column used for the windowing/aggregation. If you call it on multiple columns, Spark uses the minimum of the watermarks to ensure no data is dropped prematurely.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-amber-50 border border-amber-100 p-6 rounded-3xl">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="bg-amber-500 p-2 rounded-lg text-white">
+                                <i class="fas fa-lightbulb"></i>
+                            </div>
+                            <h4 class="font-bold text-amber-900">Pro Tip</h4>
+                        </div>
+                        <p class="text-sm text-amber-800 leading-relaxed italic">
+                            "In an interview, always mention that watermarking is critical for <strong>Stateful Aggregations</strong>. Without it, your application has a memory leak by design. Mention that the watermark is computed based on the <b>previous</b> batch to sound like an expert!"
+                        </p>
+                    </div>
+
+                    <div class="bg-blue-600 p-6 rounded-3xl text-white">
+                        <h4 class="font-bold mb-2">Checklist for Success</h4>
+                        <ul class="text-sm space-y-2 opacity-90">
+                            <li class="flex items-center gap-2"><i class="fas fa-check-circle"></i> Column is Timestamp type</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check-circle"></i> Same column used in GroupBy</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check-circle"></i> Output mode is consistent</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check-circle"></i> Checkpoint location is set</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="mt-12 border-t border-gray-200 py-8 bg-white">
+        <div class="max-w-7xl mx-auto px-4 text-center text-gray-400 text-xs">
+            &copy; 2024 Interactive PySpark Learning • Built with HTML/Tailwind
+        </div>
+    </footer>
+
+    <script>
+        function showTab(tabId) {
+            // Hide all content
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            // Show selected content
+            document.getElementById(tabId).classList.add('active');
+
+            // Update button styles
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'shadow-sm', 'text-blue-600', 'active');
+                btn.classList.add('text-gray-600');
+                
+                if (btn.getAttribute('data-tab') === tabId) {
+                    btn.classList.add('bg-white', 'shadow-sm', 'text-blue-600', 'active');
+                    btn.classList.remove('text-gray-600');
+                }
+            });
+        }
+
+        function toggleAccordion(id) {
+            const ans = document.getElementById(`ans-${id}`);
+            const icon = document.getElementById(`icon-${id}`);
+            
+            if (ans.classList.contains('hidden')) {
+                ans.classList.remove('hidden');
+                icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+            } else {
+                ans.classList.add('hidden');
+                icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+            }
+        }
+    </script>
+</body>
+</html>
