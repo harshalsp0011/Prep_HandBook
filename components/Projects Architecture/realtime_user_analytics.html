@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time User Analytics | System Architecture</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f5f5f4; }
+        ::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a29e; }
+
+        /* Transitions */
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Chart Container Utilities */
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+
+    <!-- Chosen Palette: Warm Neutrals & Deep Teal -->
+    <!-- 
+        Background: Stone-50 (#fafaf9)
+        Surface: White (#ffffff)
+        Text Primary: Stone-800 (#292524)
+        Text Secondary: Stone-500 (#78716c)
+        Accent Primary: Teal-700 (#0f766e) - Represents Stability/Engineering
+        Accent Secondary: Orange-600 (#ea580c) - Represents Alert/Action/Data Flow
+    -->
+
+    <!-- Application Structure Plan: 
+         1. Layout: Sidebar Navigation (Left) + Main Content Area (Right). This mimics a technical documentation platform or a system dashboard.
+         2. Sections:
+            - "Architecture Map": Interactive diagram of the 4 layers (Source, Transformation, Storage, Consumption). Users click nodes to see "Why" and "Tooling".
+            - "Engineering Core": Deep dive into complex topics (Idempotency, Watermarking) using visual simulations/charts.
+            - "Data Journey": A step-by-step linear flow of the 6 ELT stages.
+            - "Role Value": Tabbed interface for Data/Analytics/AI engineers to find their specific benefits.
+            - "Ops Console": A mock terminal UI for deployment commands and env vars.
+         3. Rationale: The source report is dense with technical concepts. Breaking it down into "Visual Structure" (Map), "Deep Concepts" (Core), and "Process" (Journey) allows different user mental models to digest the info.
+    -->
+
+    <!-- Visualization & Content Choices:
+         1. Architecture Map: HTML/CSS Grid with interactive Cards. Goal: Show relationships. Interaction: Click to expand details.
+         2. Watermarking Viz: Chart.js Scatter Plot. Goal: Explain "Late-Arriving Data". Interaction: Visual only. Justification: Shows event time vs processing time.
+         3. Latency Monitor: Chart.js Line Chart. Goal: Simulate "Performance" and "Real-time" aspect. 
+         4. Deployment Steps: Mock Terminal. Goal: Immersion. Interaction: Click copy buttons.
+         5. Role Cards: Interactive Tabs. Goal: Segmentation of audience.
+         
+         CONFIRMATION: NO SVG graphics used (icons are font-based). NO Mermaid JS used.
+    -->
+</head>
+<body class="bg-stone-50 text-stone-800 h-screen flex overflow-hidden selection:bg-teal-100 selection:text-teal-900">
+
+    <!-- Sidebar Navigation -->
+    <nav class="w-64 bg-white border-r border-stone-200 flex-shrink-0 flex flex-col justify-between shadow-sm z-10">
+        <div>
+            <div class="p-6 border-b border-stone-100">
+                <div class="flex items-center gap-2 text-teal-700 mb-1">
+                    <i class="ph-fill ph-circles-three-plus text-2xl"></i>
+                    <span class="font-bold text-lg tracking-tight">DataPlatform<span class="text-stone-400">.io</span></span>
+                </div>
+                <p class="text-xs text-stone-500 font-medium uppercase tracking-wider mt-2">Real-Time Analytics</p>
+            </div>
+
+            <div class="p-4 space-y-1">
+                <button onclick="router('overview')" id="nav-overview" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg bg-teal-50 text-teal-800 transition-colors">
+                    <i class="ph ph-kanban text-lg"></i>
+                    Architecture Map
+                </button>
+                <button onclick="router('engineering')" id="nav-engineering" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-stone-600 hover:bg-stone-100 transition-colors">
+                    <i class="ph ph-engine text-lg"></i>
+                    Engineering Core
+                </button>
+                <button onclick="router('flow')" id="nav-flow" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-stone-600 hover:bg-stone-100 transition-colors">
+                    <i class="ph ph-waves text-lg"></i>
+                    Data Journey
+                </button>
+                <button onclick="router('roles')" id="nav-roles" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-stone-600 hover:bg-stone-100 transition-colors">
+                    <i class="ph ph-users-three text-lg"></i>
+                    Role Value
+                </button>
+                <button onclick="router('ops')" id="nav-ops" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-stone-600 hover:bg-stone-100 transition-colors">
+                    <i class="ph ph-terminal-window text-lg"></i>
+                    Ops Manual
+                </button>
+            </div>
+        </div>
+
+        <div class="p-4 bg-stone-100 m-4 rounded-lg border border-stone-200">
+            <div class="flex items-center gap-2 mb-2">
+                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                <span class="text-xs font-semibold text-stone-600">System Status: Online</span>
+            </div>
+            <div class="text-xs text-stone-500">
+                Lat: <span class="font-mono text-stone-800">45ms</span> | TPS: <span class="font-mono text-stone-800">2.4k</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto relative scroll-smooth" id="main-scroll">
+        
+        <!-- Header -->
+        <header class="sticky top-0 bg-stone-50/90 backdrop-blur-md border-b border-stone-200 z-20 px-8 py-4 flex justify-between items-center">
+            <div>
+                <h1 id="page-title" class="text-2xl font-bold text-stone-900">System Architecture</h1>
+                <p id="page-subtitle" class="text-sm text-stone-500 mt-1">High-level overview of the Kappa-Lite decoupled architecture.</p>
+            </div>
+            <button class="bg-stone-900 hover:bg-stone-800 text-white px-4 py-2 rounded-md text-sm font-medium transition shadow-md flex items-center gap-2">
+                <i class="ph ph-download-simple"></i>
+                Export Docs
+            </button>
+        </header>
+
+        <!-- Content Container -->
+        <div class="p-8 max-w-7xl mx-auto pb-20">
+
+            <!-- SECTION 1: ARCHITECTURE OVERVIEW -->
+            <div id="view-overview" class="space-y-8 fade-in">
+                <!-- Intro Paragraph -->
+                <div class="bg-white rounded-xl p-6 border border-stone-200 shadow-sm">
+                    <h2 class="text-lg font-semibold mb-2 flex items-center gap-2">
+                        <i class="ph ph-strategy text-teal-600"></i> Design Philosophy
+                    </h2>
+                    <p class="text-stone-600 leading-relaxed">
+                        The platform follows a <strong>modular, decoupled "Kappa-Lite" approach</strong>. By separating storage, compute, and consumption, we ensure that backpressure from heavy ML workloads does not impact the ingestion throughput. The system is designed for <strong>sub-minute latency</strong> and <strong>idempotent</strong> fault recovery.
+                    </p>
+                </div>
+
+                <!-- Interactive Diagram -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
+                    <!-- Connector Lines (Visual CSS only) -->
+                    <div class="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-stone-200 -z-10 transform -translate-y-1/2"></div>
+
+                    <!-- Stage 1: Source -->
+                    <div onclick="showArchDetail('source')" class="group cursor-pointer bg-white hover:bg-teal-50 border border-stone-200 hover:border-teal-300 rounded-xl p-6 shadow-sm hover:shadow-md transition-all relative">
+                        <div class="absolute -top-3 left-6 bg-stone-100 text-stone-500 text-xs font-bold px-2 py-1 rounded border border-stone-200 uppercase tracking-wide">Ingestion</div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center text-2xl">
+                                <i class="ph ph-arrows-split"></i>
+                            </div>
+                            <span class="text-xs text-stone-400 group-hover:text-teal-600 font-mono">Kafka</span>
+                        </div>
+                        <h3 class="font-bold text-lg mb-1">Distributed Event Bus</h3>
+                        <p class="text-sm text-stone-500">Decouples producers from consumers to prevent backpressure.</p>
+                    </div>
+
+                    <!-- Stage 2: Transformation -->
+                    <div onclick="showArchDetail('transform')" class="group cursor-pointer bg-white hover:bg-teal-50 border border-stone-200 hover:border-teal-300 rounded-xl p-6 shadow-sm hover:shadow-md transition-all relative">
+                        <div class="absolute -top-3 left-6 bg-stone-100 text-stone-500 text-xs font-bold px-2 py-1 rounded border border-stone-200 uppercase tracking-wide">Processing</div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-2xl">
+                                <i class="ph ph-lightning"></i>
+                            </div>
+                            <span class="text-xs text-stone-400 group-hover:text-teal-600 font-mono">Spark</span>
+                        </div>
+                        <h3 class="font-bold text-lg mb-1">Structured Streaming</h3>
+                        <p class="text-sm text-stone-500">Unified API for incremental processing and stateful aggregations.</p>
+                    </div>
+
+                    <!-- Stage 3: Storage -->
+                    <div onclick="showArchDetail('storage')" class="group cursor-pointer bg-white hover:bg-teal-50 border border-stone-200 hover:border-teal-300 rounded-xl p-6 shadow-sm hover:shadow-md transition-all relative">
+                        <div class="absolute -top-3 left-6 bg-stone-100 text-stone-500 text-xs font-bold px-2 py-1 rounded border border-stone-200 uppercase tracking-wide">Sink</div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-2xl">
+                                <i class="ph ph-database"></i>
+                            </div>
+                            <span class="text-xs text-stone-400 group-hover:text-teal-600 font-mono">PostgreSQL</span>
+                        </div>
+                        <h3 class="font-bold text-lg mb-1">Serving Layer</h3>
+                        <p class="text-sm text-stone-500">Relational storage using UPSERT strategy for consistency.</p>
+                    </div>
+
+                    <!-- Stage 4: Consumption -->
+                    <div onclick="showArchDetail('consume')" class="group cursor-pointer bg-white hover:bg-teal-50 border border-stone-200 hover:border-teal-300 rounded-xl p-6 shadow-sm hover:shadow-md transition-all relative">
+                        <div class="absolute -top-3 left-6 bg-stone-100 text-stone-500 text-xs font-bold px-2 py-1 rounded border border-stone-200 uppercase tracking-wide">Intelligence</div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl">
+                                <i class="ph ph-chart-line-up"></i>
+                            </div>
+                            <span class="text-xs text-stone-400 group-hover:text-teal-600 font-mono">Streamlit / Sklearn</span>
+                        </div>
+                        <h3 class="font-bold text-lg mb-1">Decoupled UI & AI</h3>
+                        <p class="text-sm text-stone-500">Independent scaling for dashboards and ML inference services.</p>
+                    </div>
+                </div>
+
+                <!-- Dynamic Details Panel -->
+                <div id="arch-detail-panel" class="bg-stone-900 text-stone-50 rounded-xl p-6 shadow-lg border border-stone-800 transition-all hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 id="detail-title" class="text-xl font-bold text-white mb-2">Select a component above</h3>
+                            <p id="detail-desc" class="text-stone-400 max-w-2xl">Click on any stage in the architecture diagram to view specific technical constraints, tooling decisions, and integration points.</p>
+                        </div>
+                        <div class="text-right">
+                            <span id="detail-tool" class="bg-teal-900 text-teal-200 text-xs font-mono px-3 py-1 rounded-full border border-teal-800">System Component</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Metrics (Simulated) -->
+                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
+                        <h3 class="text-sm font-bold text-stone-500 uppercase tracking-wide mb-4">Throughput Simulation</h3>
+                        <div class="chart-container relative w-full h-64">
+                             <canvas id="throughputChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
+                        <h3 class="text-sm font-bold text-stone-500 uppercase tracking-wide mb-4">Partition Latency</h3>
+                        <div class="chart-container relative w-full h-64">
+                             <canvas id="latencyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: ENGINEERING CORE -->
+            <div id="view-engineering" class="space-y-8 hidden fade-in">
+                <!-- Intro -->
+                <div class="bg-white rounded-xl p-6 border border-stone-200 shadow-sm">
+                    <h2 class="text-lg font-semibold mb-2 flex items-center gap-2">
+                        <i class="ph ph-wrench text-teal-600"></i> Engineering "War Stories"
+                    </h2>
+                    <p class="text-stone-600">
+                        Reliability in streaming systems requires handling failure and time-skew gracefully. This section details our <strong>idempotency</strong> strategies and how we handle <strong>late-arriving data</strong> using Watermarking.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <!-- Reliability Card -->
+                    <div class="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
+                        <div class="p-6 border-b border-stone-100 bg-stone-50">
+                            <h3 class="font-bold text-stone-800">Idempotency & Upserts</h3>
+                            <p class="text-sm text-stone-500">Preventing duplicates during retries.</p>
+                        </div>
+                        <div class="p-6">
+                            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+                                <p class="text-sm text-blue-800">
+                                    <strong>Logic:</strong> We use PostgreSQL <code>ON CONFLICT</code>. If a Spark batch fails halfway, the retry simply updates the existing rows instead of inserting new ones.
+                                </p>
+                            </div>
+                            
+                            <!-- Visualization of Upsert -->
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="font-mono text-stone-500">Batch ID: 1042 (Retry)</span>
+                                    <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold">Safe</span>
+                                </div>
+                                <div class="border border-stone-200 rounded-lg overflow-hidden text-sm">
+                                    <table class="w-full text-left">
+                                        <thead class="bg-stone-100 text-stone-500">
+                                            <tr>
+                                                <th class="p-3 font-medium">User ID</th>
+                                                <th class="p-3 font-medium">Window Start</th>
+                                                <th class="p-3 font-medium">Count</th>
+                                                <th class="p-3 font-medium">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-stone-100">
+                                            <tr>
+                                                <td class="p-3 font-mono">u_882</td>
+                                                <td class="p-3 text-stone-500">10:00:00</td>
+                                                <td class="p-3">5 -> <span class="text-teal-600 font-bold">5</span></td>
+                                                <td class="p-3 text-stone-400 italic">No Change (Exists)</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="p-3 font-mono">u_991</td>
+                                                <td class="p-3 text-stone-500">10:00:00</td>
+                                                <td class="p-3">2 -> <span class="text-orange-600 font-bold">3</span></td>
+                                                <td class="p-3 text-teal-600 font-bold">UPDATE</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Watermarking Card -->
+                    <div class="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
+                        <div class="p-6 border-b border-stone-100 bg-stone-50">
+                            <h3 class="font-bold text-stone-800">Watermarking Strategy</h3>
+                            <p class="text-sm text-stone-500">Handling late-arriving data (10 min threshold).</p>
+                        </div>
+                        <div class="p-6">
+                             <div class="chart-container relative w-full h-64">
+                                <canvas id="watermarkChart"></canvas>
+                             </div>
+                             <p class="text-xs text-stone-500 mt-4 text-center">
+                                 Events below the red line (Watermark) are dropped to maintain state size.
+                             </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3: DATA JOURNEY -->
+            <div id="view-flow" class="space-y-8 hidden fade-in">
+                 <div class="bg-white rounded-xl p-6 border border-stone-200 shadow-sm">
+                    <h2 class="text-lg font-semibold mb-2 flex items-center gap-2">
+                        <i class="ph ph-steps text-teal-600"></i> ETL/ELT Pipeline Steps
+                    </h2>
+                    <p class="text-stone-600">
+                        Follow the journey of a single user event from raw ingestion to a certified dataset used for ML inference.
+                    </p>
+                </div>
+
+                <div class="relative border-l-2 border-stone-200 ml-6 space-y-12">
+                    <!-- Step 1 -->
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-teal-600 ring-4 ring-white"></div>
+                        <h3 class="font-bold text-lg text-stone-900">1. Raw Ingestion</h3>
+                        <p class="text-sm text-stone-500 mb-2">Tool: Kafka Producer</p>
+                        <div class="bg-white p-4 rounded-lg border border-stone-200 shadow-sm">
+                            <p class="text-stone-600 text-sm">Simulates high-volume user interactions (Page View -> Cart -> Purchase). Serializes as JSON to <code>user_events</code> topic.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-stone-300 ring-4 ring-white"></div>
+                        <h3 class="font-bold text-lg text-stone-900">2. Schema-on-Read</h3>
+                        <p class="text-sm text-stone-500 mb-2">Tool: Spark Consumer</p>
+                        <div class="bg-white p-4 rounded-lg border border-stone-200 shadow-sm">
+                            <p class="text-stone-600 text-sm">Incoming JSON is strictly cast to a StructType. Malformed data is filtered immediately to protect downstream quality.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-stone-300 ring-4 ring-white"></div>
+                        <h3 class="font-bold text-lg text-stone-900">3. Windowed Aggregation</h3>
+                        <p class="text-sm text-stone-500 mb-2">Tool: Spark Aggregator</p>
+                        <div class="bg-white p-4 rounded-lg border border-stone-200 shadow-sm">
+                            <p class="text-stone-600 text-sm">Computes Real-time metrics (Active Users, Revenue) using <code>groupBy</code> and <code>window</code> functions.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 4 -->
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-stone-300 ring-4 ring-white"></div>
+                        <h3 class="font-bold text-lg text-stone-900">4. Funnel Analysis</h3>
+                        <p class="text-sm text-stone-500 mb-2">Tool: Stateful Spark Transformation</p>
+                        <div class="bg-white p-4 rounded-lg border border-stone-200 shadow-sm">
+                            <p class="text-stone-600 text-sm">Tracks users through conversion steps. Calculates drop-off rates dynamically.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 5 -->
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-stone-300 ring-4 ring-white"></div>
+                        <h3 class="font-bold text-lg text-stone-900">5. Certified Dataset</h3>
+                        <p class="text-sm text-stone-500 mb-2">Tool: PostgreSQL Sink</p>
+                        <div class="bg-white p-4 rounded-lg border border-stone-200 shadow-sm">
+                            <p class="text-stone-600 text-sm">Clean, validated data is written to Postgres. Tables are indexed on `window_start` and `user_id`.</p>
+                        </div>
+                    </div>
+
+                     <!-- Step 6 -->
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-orange-500 ring-4 ring-white"></div>
+                        <h3 class="font-bold text-lg text-stone-900">6. ML Inference</h3>
+                        <p class="text-sm text-stone-500 mb-2">Tool: Scikit-Learn</p>
+                        <div class="bg-white p-4 rounded-lg border border-stone-200 shadow-sm">
+                            <p class="text-stone-600 text-sm">Reads recent behavior, applies Random Forest model, and flags high-risk churn users back to the DB.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 4: ROLE VALUE -->
+            <div id="view-roles" class="space-y-8 hidden fade-in">
+                 <div class="bg-white rounded-xl p-6 border border-stone-200 shadow-sm">
+                    <h2 class="text-lg font-semibold mb-2 flex items-center gap-2">
+                        <i class="ph ph-users-three text-teal-600"></i> Stakeholder Benefits
+                    </h2>
+                    <p class="text-stone-600">
+                        The architecture is designed to serve three distinct technical personas, balancing infrastructure robustness with data accessibility.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Data Engineer -->
+                    <div class="bg-white rounded-xl border border-stone-200 p-6 hover:shadow-lg transition-shadow">
+                        <div class="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center text-stone-600 mb-4 text-2xl">
+                            <i class="ph ph-hard-drives"></i>
+                        </div>
+                        <h3 class="font-bold text-lg mb-2">Data Engineer</h3>
+                        <ul class="space-y-3 text-sm text-stone-600">
+                            <li class="flex gap-2">
+                                <i class="ph-fill ph-check-circle text-teal-600 mt-0.5"></i>
+                                <span><strong>Infra-as-Code:</strong> Dockerized environment ensures parity across dev and prod.</span>
+                            </li>
+                            <li class="flex gap-2">
+                                <i class="ph-fill ph-check-circle text-teal-600 mt-0.5"></i>
+                                <span><strong>Fault Tolerance:</strong> Baked in via Kafka persistence and Spark checkpoints.</span>
+                            </li>
+                            <li class="flex gap-2">
+                                <i class="ph-fill ph-check-circle text-teal-600 mt-0.5"></i>
+                                <span><strong>Observability:</strong> Structured logging for consumer lag monitoring.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Analytics Engineer -->
+                    <div class="bg-white rounded-xl border border-stone-200 p-6 hover:shadow-lg transition-shadow">
+                        <div class="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center text-stone-600 mb-4 text-2xl">
+                            <i class="ph ph-chart-bar"></i>
+                        </div>
+                        <h3 class="font-bold text-lg mb-2">Analytics Engineer</h3>
+                        <ul class="space-y-3 text-sm text-stone-600">
+                            <li class="flex gap-2">
+                                <i class="ph-fill ph-check-circle text-teal-600 mt-0.5"></i>
+                                <span><strong>Star Schema:</strong> Clean, aggregated tables ready for BI tools.</span>
+                            </li>
+                            <li class="flex gap-2">
+                                <i class="ph-fill ph-check-circle text-teal-600 mt-0.5"></i>
+                                <span><strong>No Parsing:</strong> Data is pre-flattened and validated before storage.</span>
+                            </li>
+                            <li class="flex gap-2">
+                                <i class="ph-fill ph-check-circle text-teal-600 mt-0.5"></i>
+                                <span><strong>SCD Ready:</strong> Foundation laid for historical tracking.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- AI Engineer -->
+                    <div class="bg-white rounded-xl border border-stone-200 p-6 hover:shadow-lg transition-shadow">
+                         <div class="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center text-stone-600 mb-4 text-2xl">
+                            <i class="ph ph-brain"></i>
+                        </div>
+                        <h3 class="font-bold text-lg mb-2">AI Engineer</h3>
+                        <ul class="space-y-3 text-sm text-stone-600">
+                            <li class="flex gap-2">
+                                <i class="ph-fill ph-check-circle text-teal-600 mt-0.5"></i>
+                                <span><strong>Feature Store:</strong> Aggregates serve as high-fidelity features for real-time models.</span>
+                            </li>
+                            <li class="flex gap-2">
+                                <i class="ph-fill ph-check-circle text-teal-600 mt-0.5"></i>
+                                <span><strong>Feedback Loops:</strong> Predictions written back to DB for model monitoring.</span>
+                            </li>
+                            <li class="flex gap-2">
+                                <i class="ph-fill ph-check-circle text-teal-600 mt-0.5"></i>
+                                <span><strong>Decoupled Compute:</strong> ML workload doesn't impact ingestion speed.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+             <!-- SECTION 5: OPS MANUAL -->
+            <div id="view-ops" class="space-y-8 hidden fade-in">
+                <div class="bg-stone-900 rounded-xl overflow-hidden shadow-xl border border-stone-800 font-mono text-sm">
+                    <div class="bg-stone-800 px-4 py-2 flex items-center gap-2 border-b border-stone-700">
+                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        <span class="text-stone-400 ml-2">admin@analytics-platform:~/deploy</span>
+                    </div>
+                    <div class="p-6 text-stone-300 space-y-6">
+                        <!-- Step 1 -->
+                        <div>
+                            <p class="text-stone-500 mb-1"># 1. Initialize Docker Environment</p>
+                            <div class="flex items-center gap-2">
+                                <span class="text-green-400">$</span>
+                                <span class="text-white">docker-compose up -d</span>
+                                <button class="ml-auto text-stone-500 hover:text-white"><i class="ph ph-copy"></i></button>
+                            </div>
+                        </div>
+                        
+                         <!-- Step 2 -->
+                        <div>
+                            <p class="text-stone-500 mb-1"># 2. Start Data Ingestion</p>
+                            <div class="flex items-center gap-2">
+                                <span class="text-green-400">$</span>
+                                <span class="text-white">python kafka_producer/producer.py</span>
+                                <button class="ml-auto text-stone-500 hover:text-white"><i class="ph ph-copy"></i></button>
+                            </div>
+                        </div>
+
+                         <!-- Step 3 -->
+                        <div>
+                            <p class="text-stone-500 mb-1"># 3. Submit Spark Job (with Kafka Packages)</p>
+                            <div class="flex items-center gap-2">
+                                <span class="text-green-400">$</span>
+                                <span class="text-white break-all">spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.x.x spark_streaming/consumer.py</span>
+                                <button class="ml-auto text-stone-500 hover:text-white"><i class="ph ph-copy"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- Env Vars -->
+                         <div class="pt-6 border-t border-stone-800">
+                            <p class="text-stone-500 mb-3"># Environment Variables</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <span class="text-teal-400">KAFKA_BROKER</span> = <span class="text-orange-300">"localhost:9092"</span>
+                                </div>
+                                <div>
+                                    <span class="text-teal-400">POSTGRES_URL</span> = <span class="text-orange-300">"jdbc:postgresql://..."</span>
+                                </div>
+                                <div>
+                                    <span class="text-teal-400">CHECKPOINT_DIR</span> = <span class="text-orange-300">"s3://analytics-state/"</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // State Management
+        const state = {
+            currentView: 'overview',
+            charts: {}
+        };
+
+        // DOM Elements
+        const views = ['overview', 'engineering', 'flow', 'roles', 'ops'];
+        const titles = {
+            overview: 'System Architecture',
+            engineering: 'Engineering Deep Dive',
+            flow: 'Data Flow Journey',
+            roles: 'Role-Specific Value',
+            ops: 'Operational Manual'
+        };
+        const subtitles = {
+            overview: 'High-level overview of the Kappa-Lite decoupled architecture.',
+            engineering: 'Techniques for Idempotency, Reliability, and Data Quality.',
+            flow: 'Step-by-step trace from Kafka ingestion to ML Inference.',
+            roles: 'Value propositions for Data, Analytics, and AI Engineers.',
+            ops: 'Deployment commands and configuration reference.'
+        };
+
+        // Architecture Detail Data
+        const archDetails = {
+            source: {
+                title: "Source: Ingestion Layer",
+                desc: "Kafka acts as a distributed buffer. It decouples the high-velocity producer (user clicks) from the processing layer, preventing system crashes during traffic spikes.",
+                tool: "Apache Kafka"
+            },
+            transform: {
+                title: "Transformation: Stream Processing",
+                desc: "Spark Structured Streaming handles micro-batches. It manages state for windowed aggregations and uses Checkpointing for fault tolerance.",
+                tool: "Apache Spark"
+            },
+            storage: {
+                title: "Storage: Serving Layer",
+                desc: "PostgreSQL stores the 'Certified Datasets'. We use `ON CONFLICT` clauses (Upserts) to ensure that retried batches don't create duplicate records.",
+                tool: "PostgreSQL"
+            },
+            consume: {
+                title: "Consumption: Intelligence",
+                desc: "Two distinct consumers: Streamlit for human observability and Scikit-Learn for automated churn prediction. Both read from the certified Postgres tables.",
+                tool: "Streamlit / Sklearn"
+            }
+        };
+
+        // Navigation Logic
+        function router(viewName) {
+            // Update State
+            state.currentView = viewName;
+
+            // Update UI
+            views.forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                const nav = document.getElementById(`nav-${v}`);
+                
+                if (v === viewName) {
+                    el.classList.remove('hidden');
+                    // Nav Styling
+                    nav.classList.remove('text-stone-600', 'hover:bg-stone-100');
+                    nav.classList.add('bg-teal-50', 'text-teal-800');
+                } else {
+                    el.classList.add('hidden');
+                    // Nav Styling
+                    nav.classList.add('text-stone-600', 'hover:bg-stone-100');
+                    nav.classList.remove('bg-teal-50', 'text-teal-800');
+                }
+            });
+
+            // Update Header
+            document.getElementById('page-title').innerText = titles[viewName];
+            document.getElementById('page-subtitle').innerText = subtitles[viewName];
+
+            // Scroll to top
+            document.getElementById('main-scroll').scrollTo(0, 0);
+
+            // Initialize charts if needed
+            if (viewName === 'engineering') {
+                setTimeout(initWatermarkChart, 100);
+            }
+        }
+
+        // Interaction: Architecture Detail
+        function showArchDetail(key) {
+            const panel = document.getElementById('arch-detail-panel');
+            const title = document.getElementById('detail-title');
+            const desc = document.getElementById('detail-desc');
+            const tool = document.getElementById('detail-tool');
+
+            title.innerText = archDetails[key].title;
+            desc.innerText = archDetails[key].desc;
+            tool.innerText = archDetails[key].tool;
+
+            panel.classList.remove('hidden');
+        }
+
+        // Charts Initialization
+        function initCharts() {
+            // Throughput Chart (Overview)
+            const ctx1 = document.getElementById('throughputChart').getContext('2d');
+            state.charts.throughput = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: ['10:00', '10:01', '10:02', '10:03', '10:04', '10:05'],
+                    datasets: [{
+                        label: 'Events Per Second',
+                        data: [1200, 1900, 2400, 2100, 1800, 2200],
+                        borderColor: '#0f766e',
+                        backgroundColor: 'rgba(15, 118, 110, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+
+            // Latency Chart (Overview)
+            const ctx2 = document.getElementById('latencyChart').getContext('2d');
+            state.charts.latency = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: ['Part 0', 'Part 1', 'Part 2', 'Part 3'],
+                    datasets: [{
+                        label: 'Processing Latency (ms)',
+                        data: [45, 52, 38, 41],
+                        backgroundColor: '#ea580c',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function initWatermarkChart() {
+            if (state.charts.watermark) return; // Prevent re-init
+
+            const ctx = document.getElementById('watermarkChart').getContext('2d');
+            
+            // Scatter data: x = Event Time (minutes), y = Arrival Time (minutes)
+            // Watermark line: y = x + 10 (Anything arriving more than 10 mins late is dropped)
+            
+            const acceptedData = [];
+            const droppedData = [];
+
+            for(let i=0; i<20; i++) {
+                let eventTime = i * 2;
+                let delay = Math.random() * 15; // Random delay between 0 and 15 mins
+                let arrivalTime = eventTime + delay;
+
+                if (delay > 10) {
+                    droppedData.push({x: eventTime, y: arrivalTime});
+                } else {
+                    acceptedData.push({x: eventTime, y: arrivalTime});
+                }
+            }
+
+            state.charts.watermark = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        {
+                            label: 'Accepted Events',
+                            data: acceptedData,
+                            backgroundColor: '#0f766e'
+                        },
+                        {
+                            label: 'Dropped Events (>10m late)',
+                            data: droppedData,
+                            backgroundColor: '#ef4444'
+                        },
+                        {
+                            label: 'Watermark Threshold',
+                            type: 'line',
+                            data: [{x:0, y:10}, {x:40, y:50}],
+                            borderColor: '#ef4444',
+                            borderDash: [5, 5],
+                            borderWidth: 1,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { title: { display: true, text: 'Event Time (mins)' } },
+                        y: { title: { display: true, text: 'Processing Time (mins)' } }
+                    }
+                }
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            // Default view is overview
+        });
+
+    </script>
+</body>
+</html>
