@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snowflake Clustering Depth | Interactive Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .step-line { position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: #e2e8f0; z-index: 0; }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(8px); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-white/90 border-b border-gray-200 backdrop-blur-md">
+        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 p-2 rounded-lg text-white">
+                    <i data-lucide="layers" class="w-6 h-6"></i>
+                </div>
+                <h1 class="font-bold text-xl tracking-tight text-slate-800">Snowflake <span class="text-blue-600">Clustering Depth</span></h1>
+            </div>
+            <div class="hidden md:flex items-center text-sm font-medium text-slate-500">
+                Performance Optimization Guide
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-8">
+        
+        <!-- Navigation Tabs -->
+        <nav class="flex flex-wrap gap-2 mb-8 bg-gray-100 p-1.5 rounded-2xl w-fit">
+            <button onclick="showTab('what')" id="tab-what" class="tab-btn px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 bg-white text-blue-600 shadow-sm border border-gray-100">Definition</button>
+            <button onclick="showTab('why')" id="tab-why" class="tab-btn px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 text-slate-600 hover:text-slate-900">Why & Use Cases</button>
+            <button onclick="showTab('how')" id="tab-how" class="tab-btn px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 text-slate-600 hover:text-slate-900">How It Works</button>
+            <button onclick="showTab('example')" id="tab-example" class="tab-btn px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 text-slate-600 hover:text-slate-900">Example</button>
+            <button onclick="showTab('interview')" id="tab-interview" class="tab-btn px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 text-slate-600 hover:text-slate-900">Interview Prep</button>
+        </nav>
+
+        <!-- Section: What Is -->
+        <div id="content-what" class="tab-content active space-y-8 animate-in fade-in duration-500">
+            <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                <h2 class="text-3xl font-bold mb-4">What is Clustering Depth?</h2>
+                <p class="text-lg text-slate-600 leading-relaxed max-w-3xl">
+                    Clustering Depth is a performance metric in Snowflake that measures how well-organized your data is within micro-partitions. It quantifies the <strong>overlapping</strong> of data ranges across partitions for a specific set of columns (clustering keys).
+                </p>
+                <div class="mt-8 grid md:grid-cols-3 gap-6">
+                    <div class="p-6 bg-blue-50 rounded-2xl border border-blue-100">
+                        <i data-lucide="activity" class="text-blue-600 mb-3"></i>
+                        <h3 class="font-bold text-lg mb-2">The Metric</h3>
+                        <p class="text-sm text-slate-600">A value that represents the average number of overlapping micro-partitions for any given point in the data range.</p>
+                    </div>
+                    <div class="p-6 bg-emerald-50 rounded-2xl border border-emerald-100">
+                        <i data-lucide="target" class="text-emerald-600 mb-3"></i>
+                        <h3 class="font-bold text-lg mb-2">The Goal</h3>
+                        <p class="text-sm text-slate-600">The lower the depth, the better. A depth of 1.0 means perfect alignment with no overlaps, enabling maximum partition pruning.</p>
+                    </div>
+                    <div class="p-6 bg-amber-50 rounded-2xl border border-amber-100">
+                        <i data-lucide="zap" class="text-amber-600 mb-3"></i>
+                        <h3 class="font-bold text-lg mb-2">The Impact</h3>
+                        <p class="text-sm text-slate-600">Higher depth forces Snowflake to scan more micro-partitions for the same query, increasing time and credit consumption.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Why & Use Cases -->
+        <div id="content-why" class="tab-content space-y-8 animate-in fade-in duration-500">
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- Comparison -->
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                    <h2 class="text-2xl font-bold mb-6">Before vs. After Optimization</h2>
+                    <div class="space-y-6">
+                        <div class="relative p-4 bg-red-50 rounded-xl border border-red-100">
+                            <span class="absolute -top-3 left-4 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">HIGH DEPTH (POOR)</span>
+                            <div class="flex items-center justify-between mb-4 mt-2">
+                                <div class="text-sm font-semibold">Micro-Partitions Overlap</div>
+                                <div class="text-red-600 font-bold">Depth: 12.5</div>
+                            </div>
+                            <div class="grid grid-cols-4 gap-2">
+                                <div class="h-8 bg-red-200 rounded animate-pulse"></div>
+                                <div class="h-8 bg-red-300 rounded animate-pulse"></div>
+                                <div class="h-8 bg-red-200 rounded animate-pulse"></div>
+                                <div class="h-8 bg-red-400 rounded animate-pulse"></div>
+                            </div>
+                            <p class="text-xs text-red-700 mt-4 italic">Query must open almost all files because dates are scattered everywhere.</p>
+                        </div>
+                        <div class="relative p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                            <span class="absolute -top-3 left-4 bg-emerald-500 text-white text-xs px-2 py-1 rounded-full font-bold">LOW DEPTH (IDEAL)</span>
+                            <div class="flex items-center justify-between mb-4 mt-2">
+                                <div class="text-sm font-semibold">Micro-Partitions Sorted</div>
+                                <div class="text-emerald-600 font-bold">Depth: 1.2</div>
+                            </div>
+                            <div class="grid grid-cols-4 gap-2">
+                                <div class="h-8 bg-emerald-400 rounded"></div>
+                                <div class="h-8 bg-emerald-100 rounded"></div>
+                                <div class="h-8 bg-emerald-100 rounded"></div>
+                                <div class="h-8 bg-emerald-100 rounded"></div>
+                            </div>
+                            <p class="text-xs text-emerald-700 mt-4 italic">Query skips 75% of data immediately because ranges are distinct.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Applications -->
+                <div class="bg-slate-800 text-white p-8 rounded-3xl shadow-lg">
+                    <h2 class="text-2xl font-bold mb-6">Real-World Use Cases</h2>
+                    <div class="space-y-4">
+                        <div class="flex gap-4 p-4 bg-slate-700/50 rounded-2xl">
+                            <div class="p-2 bg-blue-500/20 rounded-lg shrink-0">
+                                <i data-lucide="trending-up" class="w-5 h-5 text-blue-400"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold">Massive Fact Tables</h4>
+                                <p class="text-sm text-slate-300">Tables with TBs of data where natural ingestion order isn't sufficient for common filters.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 p-4 bg-slate-700/50 rounded-2xl">
+                            <div class="p-2 bg-blue-500/20 rounded-lg shrink-0">
+                                <i data-lucide="calendar" class="w-5 h-5 text-blue-400"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold">Range-Based Queries</h4>
+                                <p class="text-sm text-slate-300">Optimization for queries using `BETWEEN` or comparison operators on dates/IDs.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 p-4 bg-slate-700/50 rounded-2xl">
+                            <div class="p-2 bg-blue-500/20 rounded-lg shrink-0">
+                                <i data-lucide="shield-check" class="w-5 h-5 text-blue-400"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold">Point Lookups</h4>
+                                <p class="text-sm text-slate-300">When queries look for specific records (e.g., CustomerID) in high-churn tables.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: How It Works -->
+        <div id="content-how" class="tab-content space-y-8 animate-in fade-in duration-500">
+            <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                <h2 class="text-2xl font-bold mb-12 text-center">The Lifecycle of Data Clustering</h2>
+                <div class="relative flex flex-col md:flex-row items-center justify-between gap-8 md:gap-4">
+                    <div class="step-line hidden md:block"></div>
+                    
+                    <div class="relative z-10 flex flex-col items-center text-center max-w-[200px]">
+                        <div class="w-14 h-14 bg-white border-4 border-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-xl mb-4 shadow-md">1</div>
+                        <h4 class="font-bold text-sm mb-2">Data Ingestion</h4>
+                        <p class="text-xs text-slate-500">New rows arrive in random or chronological order, creating micro-partitions.</p>
+                    </div>
+
+                    <div class="relative z-10 flex flex-col items-center text-center max-w-[200px]">
+                        <div class="w-14 h-14 bg-white border-4 border-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-xl mb-4 shadow-md">2</div>
+                        <h4 class="font-bold text-sm mb-2">Overlap Analysis</h4>
+                        <p class="text-xs text-slate-500">Snowflake tracks the Min/Max values of clustering keys for every partition.</p>
+                    </div>
+
+                    <div class="relative z-10 flex flex-col items-center text-center max-w-[200px]">
+                        <div class="w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xl mb-4 shadow-lg ring-8 ring-blue-50">3</div>
+                        <h4 class="font-bold text-sm mb-2 text-blue-600 font-extrabold">Auto-Clustering</h4>
+                        <p class="text-xs text-slate-500">If depth is high, background service re-writes data to group similar values.</p>
+                    </div>
+
+                    <div class="relative z-10 flex flex-col items-center text-center max-w-[200px]">
+                        <div class="w-14 h-14 bg-white border-4 border-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-xl mb-4 shadow-md">4</div>
+                        <h4 class="font-bold text-sm mb-2">Pruning</h4>
+                        <p class="text-xs text-slate-500">Future queries "prune" (skip) irrelevant partitions, scanning only required data.</p>
+                    </div>
+                </div>
+
+                <div class="mt-16 p-6 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+                    <div class="flex items-start gap-4">
+                        <i data-lucide="info" class="w-6 h-6 text-blue-500 mt-1"></i>
+                        <div>
+                            <h5 class="font-bold text-slate-800">Understanding "Overlaps"</h5>
+                            <p class="text-sm text-slate-600 mt-1">Imagine two folders: Folder A (Files with ID 1-50) and Folder B (Files with ID 40-90). They overlap on IDs 40-50. If a query asks for ID 45, Snowflake must open <strong>both</strong> folders. This is depth > 1.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Example -->
+        <div id="content-example" class="tab-content space-y-8 animate-in fade-in duration-500">
+            <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                <h2 class="text-2xl font-bold mb-6">Technical Implementation</h2>
+                
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="space-y-6">
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">1. Define Clustering Key</h4>
+                            <div class="bg-slate-900 rounded-xl p-5 font-mono text-sm text-blue-300 overflow-x-auto">
+                                <span class="text-gray-500">-- Create table with a key</span><br>
+                                <span class="text-pink-400">CREATE TABLE</span> sales_data (<br>
+                                &nbsp;&nbsp;id <span class="text-yellow-200">INT</span>,<br>
+                                &nbsp;&nbsp;sale_date <span class="text-yellow-200">DATE</span>,<br>
+                                &nbsp;&nbsp;region <span class="text-yellow-200">STRING</span><br>
+                                ) <span class="text-pink-400">CLUSTER BY</span> (sale_date);<br><br>
+                                <span class="text-gray-500">-- Or add to existing table</span><br>
+                                <span class="text-pink-400">ALTER TABLE</span> sales_data<br>
+                                <span class="text-pink-400">CLUSTER BY</span> (sale_date, region);
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">2. Check Current Depth</h4>
+                            <div class="bg-slate-900 rounded-xl p-5 font-mono text-sm text-blue-300">
+                                <span class="text-pink-400">SELECT</span> SYSTEM$CLUSTERING_DEPTH(<br>
+                                &nbsp;&nbsp;<span class="text-emerald-400">'sales_data'</span>,<br>
+                                &nbsp;&nbsp;<span class="text-emerald-400">'(sale_date)'</span><br>
+                                );
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                        <h4 class="font-bold text-blue-900 mb-4 flex items-center gap-2">
+                            <i data-lucide="microscope" class="w-5 h-5"></i> Scenario Walkthrough
+                        </h4>
+                        <div class="space-y-4 text-sm leading-relaxed text-blue-800">
+                            <p><strong>Initial State:</strong> You load 1 billion rows of web logs. Since data comes in real-time, it's roughly sorted by timestamp. Depth is <strong>~10</strong>.</p>
+                            <p><strong>The Problem:</strong> Monthly reporting queries take 15 minutes because they have to scan almost the whole table.</p>
+                            <p><strong>The Fix:</strong> You enable Clustering on `(EVENT_DATE)`. Snowflake starts re-writing micro-partitions in the background.</p>
+                            <p><strong>Result:</strong> After 2 hours, Clustering Depth drops to <strong>1.5</strong>. The same reporting query now completes in <strong>2 minutes</strong> because Snowflake skips 80% of the partitions.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Interview Prep -->
+        <div id="content-interview" class="tab-content space-y-8 animate-in fade-in duration-500">
+            <div class="grid lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 space-y-4">
+                    <h2 class="text-2xl font-bold mb-6">Common Interview Questions</h2>
+                    
+                    <!-- Flashcard 1 -->
+                    <div class="group bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden transition-all hover:border-blue-300">
+                        <button onclick="toggleAccordion('acc1')" class="w-full flex items-center justify-between p-5 text-left focus:outline-none">
+                            <span class="font-bold text-slate-700">Can a table have multiple clustering keys?</span>
+                            <i data-lucide="chevron-down" id="acc1-icon" class="w-5 h-5 text-slate-400 transition-transform duration-200"></i>
+                        </button>
+                        <div id="acc1" class="hidden p-5 bg-slate-50 border-t border-gray-100 text-slate-600 text-sm">
+                            No. A table has exactly one <strong>clustering key definition</strong>. However, that definition can be a <strong>composite key</strong> (containing multiple columns, e.g., `CLUSTER BY (DATE, REGION)`).
+                        </div>
+                    </div>
+
+                    <!-- Flashcard 2 -->
+                    <div class="group bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden transition-all hover:border-blue-300">
+                        <button onclick="toggleAccordion('acc2')" class="w-full flex items-center justify-between p-5 text-left focus:outline-none">
+                            <span class="font-bold text-slate-700">Does Auto-Clustering cost credits?</span>
+                            <i data-lucide="chevron-down" id="acc2-icon" class="w-5 h-5 text-slate-400 transition-transform duration-200"></i>
+                        </button>
+                        <div id="acc2" class="hidden p-5 bg-slate-50 border-t border-gray-100 text-slate-600 text-sm">
+                            Yes. Auto-clustering is a serverless service. Snowflake bills you based on the compute resources used to re-organize the data. You should balance the cost of clustering vs. the performance gain of your queries.
+                        </div>
+                    </div>
+
+                    <!-- Flashcard 3 -->
+                    <div class="group bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden transition-all hover:border-blue-300">
+                        <button onclick="toggleAccordion('acc3')" class="w-full flex items-center justify-between p-5 text-left focus:outline-none">
+                            <span class="font-bold text-slate-700">What is the "Clustering Information" function?</span>
+                            <i data-lucide="chevron-down" id="acc3-icon" class="w-5 h-5 text-slate-400 transition-transform duration-200"></i>
+                        </button>
+                        <div id="acc3" class="hidden p-5 bg-slate-50 border-t border-gray-100 text-slate-600 text-sm">
+                            `SYSTEM$CLUSTERING_INFORMATION` provides more detail than just depth. It returns a JSON object containing the total partition count, total constant partition count, and a histogram showing the distribution of overlaps.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-amber-100 p-8 rounded-3xl border border-amber-200 relative overflow-hidden">
+                        <i data-lucide="lightbulb" class="absolute -right-4 -top-4 w-24 h-24 text-amber-200/50"></i>
+                        <h3 class="text-xl font-bold text-amber-900 mb-4">Pro Tip</h3>
+                        <p class="text-amber-800 text-sm leading-relaxed font-medium">
+                            Don't rush to cluster every table! Snowflake's <strong>Natural Ingestion Ordering</strong> (inserting data by time) is often "good enough." Only apply clustering keys to tables larger than multiple Terabytes where queries are consistently slow despite right-sized warehouses.
+                        </p>
+                    </div>
+
+                    <div class="bg-indigo-600 text-white p-8 rounded-3xl shadow-xl">
+                        <h3 class="text-xl font-bold mb-4">Depth Summary</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between border-b border-indigo-500 pb-2">
+                                <span class="text-indigo-200 text-sm">Target</span>
+                                <span class="font-bold">1.0 - 2.0</span>
+                            </div>
+                            <div class="flex items-center justify-between border-b border-indigo-500 pb-2">
+                                <span class="text-indigo-200 text-sm">Poor</span>
+                                <span class="font-bold">> 10.0</span>
+                            </div>
+                            <div class="flex items-center justify-between border-b border-indigo-500 pb-2">
+                                <span class="text-indigo-200 text-sm">Automatic?</span>
+                                <span class="font-bold">Yes (Opt-in)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="border-t border-gray-200 mt-20 bg-white">
+        <div class="max-w-6xl mx-auto px-4 py-12 text-center text-slate-500">
+            <p class="text-sm">Interactive Snowflake Performance Series &copy; 2024</p>
+        </div>
+    </footer>
+
+    <script>
+        // Ensure Lucide is loaded before creating icons
+        function initLucide() {
+            if (window.lucide) {
+                window.lucide.createIcons();
+            } else {
+                // Retry after a short delay if script is still loading
+                setTimeout(initLucide, 100);
+            }
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            initLucide();
+        });
+
+        // Tab System
+        function showTab(tabId) {
+            // Hide all contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active styles from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'text-blue-600', 'shadow-sm', 'border', 'border-gray-100');
+                btn.classList.add('text-slate-600');
+            });
+
+            // Show selected content
+            document.getElementById('content-' + tabId).classList.add('active');
+            
+            // Set active button styles
+            const activeBtn = document.getElementById('tab-' + tabId);
+            activeBtn.classList.add('bg-white', 'text-blue-600', 'shadow-sm', 'border', 'border-gray-100');
+            activeBtn.classList.remove('text-slate-600');
+        }
+
+        // Accordion System
+        function toggleAccordion(id) {
+            const content = document.getElementById(id);
+            const icon = document.getElementById(id + '-icon');
+            const isHidden = content.classList.contains('hidden');
+            
+            // Close all others
+            document.querySelectorAll('[id^="acc"]').forEach(el => {
+                if(el.id.includes('icon')) return;
+                el.classList.add('hidden');
+            });
+            document.querySelectorAll('[id$="-icon"]').forEach(el => el.style.transform = 'rotate(0deg)');
+
+            if(isHidden) {
+                content.classList.remove('hidden');
+                icon.style.transform = 'rotate(180deg)';
+            }
+        }
+    </script>
+</body>
+</html>
