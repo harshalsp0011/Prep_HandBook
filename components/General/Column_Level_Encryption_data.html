@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Column-Level Encryption Guide | Snowflake & Postgres</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .nav-link.active { 
+            border-bottom: 2px solid #3b82f6; 
+            color: #2563eb; 
+            background-color: #eff6ff;
+        }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+        .accordion-content.open { max-height: 500px; }
+        pre { background-color: #1e293b; color: #f8fafc; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }
+        .step-line::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 100%;
+            background: #e2e8f0;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-slate-900 antialiased">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="bg-blue-600 p-2 rounded-lg text-white">
+                    <i data-lucide="shield-check"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-slate-800">SecurData <span class="text-blue-600">CLE</span></h1>
+            </div>
+            <div class="hidden md:flex items-center gap-4 text-sm font-medium text-slate-500">
+                <span class="flex items-center gap-1"><i data-lucide="database" class="w-4 h-4"></i> Snowflake</span>
+                <span class="flex items-center gap-1"><i data-lucide="database" class="w-4 h-4"></i> PostgreSQL</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-white border-b border-gray-200 sticky top-16 z-40">
+        <div class="max-w-7xl mx-auto px-4 overflow-x-auto">
+            <div class="flex whitespace-nowrap space-x-1 py-1" id="tab-nav">
+                <button onclick="switchTab('intro')" id="tab-intro" class="nav-link active px-4 py-3 text-sm font-medium transition-all rounded-t-lg hover:bg-gray-50">Overview</button>
+                <button onclick="switchTab('why')" id="tab-why" class="nav-link px-4 py-3 text-sm font-medium transition-all rounded-t-lg hover:bg-gray-50">Why & Cases</button>
+                <button onclick="switchTab('how')" id="tab-how" class="nav-link px-4 py-3 text-sm font-medium transition-all rounded-t-lg hover:bg-gray-50">How it Works</button>
+                <button onclick="switchTab('example')" id="tab-example" class="nav-link px-4 py-3 text-sm font-medium transition-all rounded-t-lg hover:bg-gray-50">Technical Dive</button>
+                <button onclick="switchTab('interview')" id="tab-interview" class="nav-link px-4 py-3 text-sm font-medium transition-all rounded-t-lg hover:bg-gray-50">Interview Prep</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-5xl mx-auto px-4 py-12">
+
+        <!-- SECTION 1: INTRODUCTION -->
+        <section id="content-intro" class="tab-content active space-y-8 animate-in fade-in duration-500">
+            <div class="text-center max-w-2xl mx-auto">
+                <h2 class="text-3xl font-bold text-slate-900 mb-4">What is Column-Level Encryption?</h2>
+                <p class="text-slate-600 leading-relaxed">Column-Level Encryption (CLE) is a security practice where sensitive data within specific database columns is encrypted before or during storage. Unlike Transparent Data Encryption (TDE) which protects the disk, CLE protects the data itself from privileged users and storage theft.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-4">
+                        <i data-lucide="lock"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 mb-2">Granular Control</h3>
+                    <p class="text-sm text-slate-600">Encrypt only what is needed (SSNs, emails) to minimize performance overhead while maximizing security.</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center mb-4">
+                        <i data-lucide="user-x"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 mb-2">Zero Trust</h3>
+                    <p class="text-sm text-slate-600">Even database administrators (DBAs) cannot see plain-text data without specific cryptographic keys.</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 bg-green-100 text-green-600 rounded-xl flex items-center justify-center mb-4">
+                        <i data-lucide="file-check"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 mb-2">Compliance Ready</h3>
+                    <p class="text-sm text-slate-600">Easily meet GDPR, HIPAA, and PCI-DSS requirements for protecting Personally Identifiable Information (PII).</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: WHY & USE CASES -->
+        <section id="content-why" class="tab-content space-y-12">
+            <div class="bg-white rounded-3xl overflow-hidden border border-gray-200 shadow-xl">
+                <div class="grid md:grid-cols-2">
+                    <div class="p-8 border-r border-gray-100 bg-red-50/30">
+                        <h4 class="text-red-600 font-bold flex items-center gap-2 mb-6">
+                            <i data-lucide="alert-triangle"></i> Before CLE
+                        </h4>
+                        <ul class="space-y-4 text-sm">
+                            <li class="flex items-start gap-3">
+                                <div class="mt-1 bg-red-200 p-1 rounded-full text-red-700"><i data-lucide="x" class="w-3 h-3"></i></div>
+                                <span>DBAs have full visibility of PII data during maintenance.</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <div class="mt-1 bg-red-200 p-1 rounded-full text-red-700"><i data-lucide="x" class="w-3 h-3"></i></div>
+                                <span>A database dump or stolen disk might expose plain-text values if TDE fails.</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <div class="mt-1 bg-red-200 p-1 rounded-full text-red-700"><i data-lucide="x" class="w-3 h-3"></i></div>
+                                <span>No audit trail of who is decrypting specific sensitive rows.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="p-8 bg-blue-50/30">
+                        <h4 class="text-blue-600 font-bold flex items-center gap-2 mb-6">
+                            <i data-lucide="check-circle-2"></i> After CLE
+                        </h4>
+                        <ul class="space-y-4 text-sm">
+                            <li class="flex items-start gap-3">
+                                <div class="mt-1 bg-blue-200 p-1 rounded-full text-blue-700"><i data-lucide="check" class="w-3 h-3"></i></div>
+                                <span>Separation of duties: DBAs manage infra, but not the encryption keys.</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <div class="mt-1 bg-blue-200 p-1 rounded-full text-blue-700"><i data-lucide="check" class="w-3 h-3"></i></div>
+                                <span>Data remains encrypted in logs, backups, and temporary storage.</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <div class="mt-1 bg-blue-200 p-1 rounded-full text-blue-700"><i data-lucide="check" class="w-3 h-3"></i></div>
+                                <span>Dynamic decryption ensures only authorized app roles see the plain text.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <h3 class="text-2xl font-bold text-center">Real-World Applications</h3>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div class="flex items-center gap-4 p-4 bg-white border border-gray-100 rounded-xl">
+                        <div class="bg-gray-100 p-3 rounded-lg"><i data-lucide="credit-card" class="text-slate-600"></i></div>
+                        <div>
+                            <p class="font-semibold">Financial Services</p>
+                            <p class="text-xs text-slate-500">Encrypting Primary Account Numbers (PAN) to meet PCI-DSS.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 p-4 bg-white border border-gray-100 rounded-xl">
+                        <div class="bg-gray-100 p-3 rounded-lg"><i data-lucide="activity" class="text-slate-600"></i></div>
+                        <div>
+                            <p class="font-semibold">Healthcare (HIPAA)</p>
+                            <p class="text-xs text-slate-500">Protecting patient diagnoses and social security numbers.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: HOW IT WORKS -->
+        <section id="content-how" class="tab-content space-y-12">
+            <h3 class="text-2xl font-bold text-center mb-12">The Encryption Lifecycle</h3>
+            
+            <div class="relative flex flex-col items-center space-y-16">
+                <div class="step-line"></div>
+                
+                <!-- Step 1 -->
+                <div class="relative z-10 flex flex-col items-center max-w-sm text-center">
+                    <div class="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg shadow-blue-200 mb-4">1</div>
+                    <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm w-full">
+                        <h4 class="font-bold mb-2">Key Generation</h4>
+                        <p class="text-sm text-slate-500">A strong symmetric key (AES-256) is generated and stored in a HSM or Key Management Service (AWS KMS, Azure Key Vault).</p>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="relative z-10 flex flex-col items-center max-w-sm text-center">
+                    <div class="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg shadow-blue-200 mb-4">2</div>
+                    <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm w-full">
+                        <h4 class="font-bold mb-2">Ingestion & Encryption</h4>
+                        <p class="text-sm text-slate-500">Data enters via SQL. A function (e.g., `pgp_sym_encrypt`) encrypts the string into binary/hex before writing to the physical block.</p>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="relative z-10 flex flex-col items-center max-w-sm text-center">
+                    <div class="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg shadow-blue-200 mb-4">3</div>
+                    <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm w-full">
+                        <h4 class="font-bold mb-2">RBAC Access</h4>
+                        <p class="text-sm text-slate-500">The user queries the table. The DB checks if the user's role has the `DECRYPT` permission or access to the key secret.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: EXAMPLE -->
+        <section id="content-example" class="tab-content space-y-8">
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- Postgres Example -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-700">
+                            <i data-lucide="database" class="w-4 h-4"></i>
+                        </div>
+                        <h3 class="font-bold text-lg">PostgreSQL (pgcrypto)</h3>
+                    </div>
+                    <p class="text-sm text-slate-600">Postgres uses the `pgcrypto` extension for symmetric encryption.</p>
+                    <pre><code class="text-xs">-- 1. Enable extension
+CREATE EXTENSION pgcrypto;
+
+-- 2. Insert encrypted data
+INSERT INTO users (username, ssn)
+VALUES (
+  'jdoe', 
+  pgp_sym_encrypt('123-45-678', 'secret-key-123')
+);
+
+-- 3. Decrypt on read
+SELECT 
+  username, 
+  pgp_sym_decrypt(ssn, 'secret-key-123') as plain_ssn
+FROM users;</code></pre>
+                </div>
+
+                <!-- Snowflake Example -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-8 h-8 bg-cyan-100 rounded-lg flex items-center justify-center text-cyan-700">
+                            <i data-lucide="cloud" class="w-4 h-4"></i>
+                        </div>
+                        <h3 class="font-bold text-lg">Snowflake (Built-in)</h3>
+                    </div>
+                    <p class="text-sm text-slate-600">Snowflake uses specialized functions like `ENCRYPT` with internal key management.</p>
+                    <pre><code class="text-xs">-- 1. Encrypting data with a key
+INSERT INTO customer_data (email_raw)
+SELECT ENCRYPT(
+    'user@email.com', 
+    'MY_SECRET_KEY'
+);
+
+-- 2. Using Masking Policies (Best Practice)
+CREATE MASKING POLICY protect_ssn AS (val string) 
+  RETURNS string ->
+  CASE
+    WHEN current_role() IN ('HR_ADMIN') THEN val
+    ELSE '***-**-****'
+  END;
+
+ALTER TABLE users MODIFY COLUMN ssn 
+SET MASKING POLICY protect_ssn;</code></pre>
+                </div>
+            </div>
+
+            <div class="bg-amber-50 border-l-4 border-amber-400 p-6 rounded-r-xl">
+                <div class="flex gap-3">
+                    <i data-lucide="alert-circle" class="text-amber-600"></i>
+                    <div>
+                        <h4 class="font-bold text-amber-800">Performance Warning</h4>
+                        <p class="text-sm text-amber-700">Encryption prevents the database from using standard indexes for range queries (e.g., `WHERE age > 25`). For searchable encrypted data, consider **Deterministic Encryption** or **Blind Indexes**.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: INTERVIEW PREP -->
+        <section id="content-interview" class="tab-content space-y-8">
+            <h3 class="text-2xl font-bold text-center">Interview Flashcards</h3>
+            
+            <div class="space-y-4 max-w-3xl mx-auto">
+                <!-- Q1 -->
+                <div class="bg-white border border-gray-200 rounded-xl shadow-sm">
+                    <button onclick="toggleAccordion(1)" class="w-full text-left p-5 flex justify-between items-center focus:outline-none">
+                        <span class="font-semibold text-slate-800">What is the difference between TDE and CLE?</span>
+                        <i data-lucide="chevron-down" id="icon-1" class="transition-transform"></i>
+                    </button>
+                    <div id="acc-1" class="accordion-content">
+                        <div class="p-5 pt-0 text-sm text-slate-600 border-t border-gray-50">
+                            TDE (Transparent Data Encryption) encrypts data at the file system level (data at rest). It protects against physical theft of hard drives. CLE (Column-Level Encryption) encrypts specific fields within the database. It protects against privileged user access (DBAs) and provides more granular control.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q2 -->
+                <div class="bg-white border border-gray-200 rounded-xl shadow-sm">
+                    <button onclick="toggleAccordion(2)" class="w-full text-left p-5 flex justify-between items-center focus:outline-none">
+                        <span class="font-semibold text-slate-800">How do you handle "Search" on encrypted columns?</span>
+                        <i data-lucide="chevron-down" id="icon-2" class="transition-transform"></i>
+                    </button>
+                    <div id="acc-2" class="accordion-content">
+                        <div class="p-5 pt-0 text-sm text-slate-600 border-t border-gray-50">
+                            Searching directly on ciphertext is impossible with randomized encryption. Strategies include: 
+                            1. **Deterministic Encryption:** The same input always results in the same ciphertext (allows equality checks but is less secure).
+                            2. **Blind Indexing:** Store a hashed version (HMAC) of the data in a separate column to use for lookups.
+                            3. **Application-side Search:** Decrypting data in the app (not scalable for large datasets).
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q3 -->
+                <div class="bg-white border border-gray-200 rounded-xl shadow-sm">
+                    <button onclick="toggleAccordion(3)" class="w-full text-left p-5 flex justify-between items-center focus:outline-none">
+                        <span class="font-semibold text-slate-800">What is "Envelope Encryption"?</span>
+                        <i data-lucide="chevron-down" id="icon-3" class="transition-transform"></i>
+                    </button>
+                    <div id="acc-3" class="accordion-content">
+                        <div class="p-5 pt-0 text-sm text-slate-600 border-t border-gray-50">
+                            Envelope encryption is the practice of encrypting data with a Data Encryption Key (DEK) and then encrypting that DEK with a Master Key (MK). This allows you to rotate the Master Key easily without re-encrypting all your data.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-blue-600 rounded-2xl p-8 text-white shadow-xl shadow-blue-100 flex flex-col md:flex-row items-center gap-6">
+                <div class="bg-white/20 p-4 rounded-full">
+                    <i data-lucide="lightbulb" class="w-8 h-8"></i>
+                </div>
+                <div>
+                    <h4 class="text-xl font-bold mb-1">Pro Tip for Engineers</h4>
+                    <p class="text-blue-100 text-sm">Always combine Column-Level Encryption with **Dynamic Data Masking**. While CLE protects the storage, Masking ensures that users only see what they need in the UI (e.g., last 4 digits of a card) without triggering a heavy decryption process for every row.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="border-t border-gray-200 py-12 bg-white">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-slate-400 text-sm">Interactive Security Guide • Generated for Database Engineering Prep</p>
+        </div>
+    </footer>
+
+    <script>
+        // Use a safer way to initialize Lucide after the script has definitely loaded and DOM is ready
+        function initIcons() {
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', initIcons);
+
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            // Update Navigation
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            const activeTab = document.getElementById('tab-' + tabId);
+            if (activeTab) activeTab.classList.add('active');
+
+            // Update Content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            const activeContent = document.getElementById('content-' + tabId);
+            if (activeContent) activeContent.classList.add('active');
+
+            // Scroll to top of content
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Accordion Logic
+        function toggleAccordion(id) {
+            const content = document.getElementById('acc-' + id);
+            const icon = document.getElementById('icon-' + id);
+            
+            const isOpen = content.classList.contains('open');
+            
+            // Close all others
+            document.querySelectorAll('.accordion-content').forEach(acc => acc.classList.remove('open'));
+            document.querySelectorAll('.transition-transform').forEach(ic => ic.style.transform = 'rotate(0deg)');
+
+            if (!isOpen) {
+                content.classList.add('open');
+                icon.style.transform = 'rotate(180deg)';
+            }
+        }
+    </script>
+</body>
+</html>
