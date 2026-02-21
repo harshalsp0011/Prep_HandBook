@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kafka: Fault Tolerance & Buffering</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .tab-button.active { 
+            border-bottom: 2px solid #2563eb; 
+            color: #2563eb; 
+            background-color: #eff6ff;
+        }
+        .step-connector {
+            position: relative;
+        }
+        @media (min-width: 768px) {
+            .step-connector::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                right: -25px;
+                width: 50px;
+                height: 2px;
+                background: #cbd5e1;
+                z-index: 1;
+            }
+            .step-connector:last-child::after { display: none; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2 rounded-lg">
+                    <i class="fa-solid fa-layer-group text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-gray-900">Kafka Architecture <span class="text-blue-600">Pro</span></h1>
+            </div>
+            <div class="hidden md:block text-sm font-medium text-gray-500">
+                Fault Tolerance & Buffering Deep Dive
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Navigation Tabs -->
+        <nav class="flex flex-wrap gap-1 bg-white p-1 rounded-xl shadow-sm border border-gray-200 mb-8 overflow-x-auto">
+            <button onclick="showTab('what-is')" id="tab-what-is" class="tab-button active flex-1 min-w-[150px] py-3 px-4 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2">
+                <i class="fa-solid fa-circle-info"></i> What is Kafka?
+            </button>
+            <button onclick="showTab('why-use')" id="tab-why-use" class="tab-button flex-1 min-w-[150px] py-3 px-4 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2">
+                <i class="fa-solid fa-bolt"></i> Why & Use Cases
+            </button>
+            <button onclick="showTab('how-it-works')" id="tab-how-it-works" class="tab-button flex-1 min-w-[150px] py-3 px-4 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2">
+                <i class="fa-solid fa-gears"></i> How it Works
+            </button>
+            <button onclick="showTab('example')" id="tab-example" class="tab-button flex-1 min-w-[150px] py-3 px-4 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2">
+                <i class="fa-solid fa-code"></i> Technical Example
+            </button>
+            <button onclick="showTab('interview')" id="tab-interview" class="tab-button flex-1 min-w-[150px] py-3 px-4 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2">
+                <i class="fa-solid fa-clipboard-question"></i> Interview Prep
+            </button>
+        </nav>
+
+        <!-- Tab Content: What is Kafka -->
+        <section id="what-is" class="tab-content active animate-in fade-in duration-500">
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+                <div class="max-w-3xl">
+                    <h2 class="text-3xl font-bold mb-4">The Distributed Heart of Data</h2>
+                    <p class="text-lg text-gray-600 mb-8 leading-relaxed">
+                        Apache Kafka is a distributed event streaming platform. Unlike traditional message brokers that delete data after delivery, Kafka acts as a <strong>fault-tolerant, persistent log</strong> that allows systems to buffer massive spikes in traffic without crashing.
+                    </p>
+                </div>
+                
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="p-6 bg-blue-50 rounded-xl border border-blue-100">
+                        <i class="fa-solid fa-shield-halved text-blue-600 text-3xl mb-4"></i>
+                        <h3 class="font-bold text-lg mb-2 text-blue-900">Durability</h3>
+                        <p class="text-blue-800/80 text-sm">Data is written to disk and replicated across multiple brokers. Even if a server explodes, your data is safe.</p>
+                    </div>
+                    <div class="p-6 bg-purple-50 rounded-xl border border-purple-100">
+                        <i class="fa-solid fa-hourglass-start text-purple-600 text-3xl mb-4"></i>
+                        <h3 class="font-bold text-lg mb-2 text-purple-900">Buffering</h3>
+                        <p class="text-purple-800/80 text-sm">Decouples producers from consumers. If consumers are slow, Kafka holds the data until they catch up.</p>
+                    </div>
+                    <div class="p-6 bg-emerald-50 rounded-xl border border-emerald-100">
+                        <i class="fa-solid fa-expand text-emerald-600 text-3xl mb-4"></i>
+                        <h3 class="font-bold text-lg mb-2 text-emerald-900">Scalability</h3>
+                        <p class="text-emerald-800/80 text-sm">Scale horizontally by adding more brokers. Partitioning allows parallel processing across a cluster.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab Content: Why & Use Cases -->
+        <section id="why-use" class="tab-content animate-in fade-in duration-500">
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- Comparison Section -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+                    <h2 class="text-2xl font-bold mb-6">Before vs. After Kafka</h2>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-red-50 rounded-lg border-l-4 border-red-500">
+                            <h4 class="font-bold text-red-800 flex items-center gap-2">
+                                <i class="fa-solid fa-circle-xmark"></i> Point-to-Point (Legacy)
+                            </h4>
+                            <p class="text-red-700 text-sm mt-1">Direct coupling. If the destination is down or slow, the source fails (Tight Coupling).</p>
+                        </div>
+                        <div class="flex justify-center py-2">
+                            <i class="fa-solid fa-arrow-down text-gray-300 text-xl"></i>
+                        </div>
+                        <div class="p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
+                            <h4 class="font-bold text-green-800 flex items-center gap-2">
+                                <i class="fa-solid fa-circle-check"></i> Distributed Log (Kafka)
+                            </h4>
+                            <p class="text-green-700 text-sm mt-1">Producers write to a buffer. Consumers read at their own pace. Total fault isolation.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Applications -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+                    <h2 class="text-2xl font-bold mb-6">Real-World Applications</h2>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-4">
+                            <div class="mt-1 bg-gray-100 p-2 rounded">
+                                <i class="fa-solid fa-chart-line text-blue-600"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold">Metrics & Log Aggregation</h4>
+                                <p class="text-gray-500 text-sm">Consolidating logs from thousands of microservices into a central monitoring tool.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-4">
+                            <div class="mt-1 bg-gray-100 p-2 rounded">
+                                <i class="fa-solid fa-credit-card text-emerald-600"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold">Stream Processing</h4>
+                                <p class="text-gray-500 text-sm">Real-time fraud detection where every millisecond counts but data loss is unacceptable.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-4">
+                            <div class="mt-1 bg-gray-100 p-2 rounded">
+                                <i class="fa-solid fa-database text-purple-600"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold">Commit Log</h4>
+                                <p class="text-gray-500 text-sm">Serving as an external commit log for distributed databases to ensure consistency.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab Content: How it Works -->
+        <section id="how-it-works" class="tab-content animate-in fade-in duration-500">
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+                <h2 class="text-2xl font-bold mb-8 text-center">Fault Tolerance Lifecycle</h2>
+                
+                <div class="grid md:grid-cols-4 gap-8 relative">
+                    <!-- Step 1 -->
+                    <div class="step-connector flex flex-col items-center text-center">
+                        <div class="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-bold mb-4 shadow-lg z-10">1</div>
+                        <h4 class="font-bold mb-2">Producers Write</h4>
+                        <p class="text-xs text-gray-500">Data is partitioned and sent to the <strong>Leader</strong> of the partition.</p>
+                    </div>
+                    <!-- Step 2 -->
+                    <div class="step-connector flex flex-col items-center text-center">
+                        <div class="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-bold mb-4 shadow-lg z-10">2</div>
+                        <h4 class="font-bold mb-2">ISR Replication</h4>
+                        <p class="text-xs text-gray-500">The <strong>In-Sync Replicas</strong> (Followers) pull data from the leader to keep a copy.</p>
+                    </div>
+                    <!-- Step 3 -->
+                    <div class="step-connector flex flex-col items-center text-center">
+                        <div class="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-bold mb-4 shadow-lg z-10">3</div>
+                        <h4 class="font-bold mb-2">Persistence</h4>
+                        <p class="text-xs text-gray-500">Data is flushed to disk. It's now "immutable" and can't be changed or lost.</p>
+                    </div>
+                    <!-- Step 4 -->
+                    <div class="flex flex-col items-center text-center">
+                        <div class="w-16 h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xl font-bold mb-4 shadow-lg z-10">4</div>
+                        <h4 class="font-bold mb-2">Consumer Pull</h4>
+                        <p class="text-xs text-gray-500">Consumers read from the offset. If they crash, they resume from where they left off.</p>
+                    </div>
+                </div>
+
+                <div class="mt-12 p-6 bg-gray-50 rounded-xl border border-gray-200">
+                    <h3 class="font-bold mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-memory text-blue-600"></i> The Buffer Magic
+                    </h3>
+                    <div class="flex flex-col md:flex-row gap-6 items-center">
+                        <div class="flex-1 space-y-4">
+                            <p class="text-sm text-gray-600">Kafka uses the <strong>OS Page Cache</strong> to store data in RAM before writing to disk, allowing it to handle bursts of 1M+ messages/second. If RAM is full, it spills to disk automatically.</p>
+                            <div class="flex gap-2">
+                                <span class="px-3 py-1 bg-white border border-gray-300 rounded-full text-xs font-mono">zero-copy</span>
+                                <span class="px-3 py-1 bg-white border border-gray-300 rounded-full text-xs font-mono">sequential I/O</span>
+                                <span class="px-3 py-1 bg-white border border-gray-300 rounded-full text-xs font-mono">decoupling</span>
+                            </div>
+                        </div>
+                        <div class="w-full md:w-64 h-32 bg-white rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center relative overflow-hidden">
+                            <div class="absolute inset-0 bg-blue-100 opacity-20 animate-pulse"></div>
+                            <span class="text-gray-400 font-bold">KAFKA BUFFER</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab Content: Example -->
+        <section id="example" class="tab-content animate-in fade-in duration-500">
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+                <h2 class="text-2xl font-bold mb-6">Technical Configuration Deep-Dive</h2>
+                <div class="grid lg:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-lg font-bold mb-4">Reliability Settings</h3>
+                        <p class="text-gray-600 text-sm mb-4">How you configure the producer dictates how "fault-tolerant" your write operation is.</p>
+                        <div class="space-y-3">
+                            <div class="p-3 border rounded-lg bg-gray-50">
+                                <code class="text-xs font-bold text-blue-700">acks=0</code>
+                                <p class="text-xs text-gray-500 mt-1">Fire and forget. Fastest, but no fault tolerance.</p>
+                            </div>
+                            <div class="p-3 border rounded-lg bg-gray-50">
+                                <code class="text-xs font-bold text-blue-700">acks=1</code>
+                                <p class="text-xs text-gray-500 mt-1">Default. Leader receives but doesn't wait for followers. Risks data loss if Leader crashes immediately.</p>
+                            </div>
+                            <div class="p-3 border rounded-lg bg-blue-50 border-blue-200">
+                                <code class="text-xs font-bold text-blue-700">acks=all (or -1)</code>
+                                <p class="text-xs text-gray-500 mt-1">Full fault tolerance. Waits for all In-Sync Replicas to acknowledge receipt.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-900 rounded-xl p-6 text-gray-300 font-mono text-xs overflow-x-auto">
+                        <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+                            <span>Producer.properties</span>
+                            <span class="text-gray-500">Config</span>
+                        </div>
+                        <pre>
+<span class="text-gray-500"># The heart of Kafka's Fault Tolerance</span>
+<span class="text-blue-400">bootstrap.servers</span>=localhost:9092
+<span class="text-blue-400">acks</span>=all
+<span class="text-blue-400">retries</span>=2147483647
+<span class="text-blue-400">delivery.timeout.ms</span>=120000
+
+<span class="text-gray-500"># Buffering capacity</span>
+<span class="text-blue-400">buffer.memory</span>=33554432
+<span class="text-blue-400">batch.size</span>=16384
+<span class="text-blue-400">linger.ms</span>=5
+                        </pre>
+                        <div class="mt-4 p-2 bg-gray-800 rounded text-[10px] text-gray-400">
+                            <strong>Note:</strong> <code class="text-white">buffer.memory</code> determines the size of the producer-side buffer before blocking or failing.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab Content: Interview Prep -->
+        <section id="interview" class="tab-content animate-in fade-in duration-500">
+            <div class="max-w-4xl mx-auto">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold mb-2">Interview Flashcards</h2>
+                    <p class="text-gray-600">Click to reveal the answers for common Kafka architecture questions.</p>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- Q1 -->
+                    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                        <button onclick="toggleAccordion('ans1')" class="w-full text-left p-6 flex justify-between items-center hover:bg-gray-50 transition-colors">
+                            <span class="font-bold text-gray-800">How does Kafka handle a Broker failure?</span>
+                            <i id="icon-ans1" class="fa-solid fa-chevron-down text-gray-400"></i>
+                        </button>
+                        <div id="ans1" class="hidden p-6 pt-0 border-t border-gray-100 bg-gray-50">
+                            <p class="text-sm text-gray-700">Kafka uses <strong>Partition Leaders</strong>. Each partition has 1 leader and multiple followers. If a broker (Leader) fails, Zookeeper (or Kraft) detects it and triggers an election among the In-Sync Replicas (ISR) to choose a new Leader. All clients automatically redirect their requests to the new leader.</p>
+                        </div>
+                    </div>
+
+                    <!-- Q2 -->
+                    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                        <button onclick="toggleAccordion('ans2')" class="w-full text-left p-6 flex justify-between items-center hover:bg-gray-50 transition-colors">
+                            <span class="font-bold text-gray-800">What is the "ISR" (In-Sync Replicas)?</span>
+                            <i id="icon-ans2" class="fa-solid fa-chevron-down text-gray-400"></i>
+                        </button>
+                        <div id="ans2" class="hidden p-6 pt-0 border-t border-gray-100 bg-gray-50">
+                            <p class="text-sm text-gray-700">The ISR is the set of replicas that are "caught up" with the leader. Only replicas in the ISR are eligible to become leaders. If a replica falls too far behind (defined by <code class="bg-white px-1 font-mono">replica.lag.time.max.ms</code>), it is kicked out of the ISR to prevent it from stalling writes.</p>
+                        </div>
+                    </div>
+
+                    <!-- Q3 -->
+                    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                        <button onclick="toggleAccordion('ans3')" class="w-full text-left p-6 flex justify-between items-center hover:bg-gray-50 transition-colors">
+                            <span class="font-bold text-gray-800">How does Kafka prevent data loss during buffering?</span>
+                            <i id="icon-ans3" class="fa-solid fa-chevron-down text-gray-400"></i>
+                        </button>
+                        <div id="ans3" class="hidden p-6 pt-0 border-t border-gray-100 bg-gray-50">
+                            <p class="text-sm text-gray-700">Kafka uses a <strong>WAL (Write Ahead Log)</strong>. When a message is received, it is appended to an immutable file on disk immediately after replication requirements are met. Even if the entire cluster loses power, the data remains on the physical disk to be re-read upon restart.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 p-6 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl text-white">
+                    <div class="flex items-center gap-4 mb-3">
+                        <i class="fa-solid fa-lightbulb text-yellow-300 text-2xl"></i>
+                        <h3 class="text-xl font-bold">Pro Interview Tip</h3>
+                    </div>
+                    <p class="text-blue-100 leading-relaxed">
+                        If asked about "Backpressure," explain that Kafka doesn't use it in the traditional sense. Since it's a <strong>PULL-based</strong> system, the consumer is responsible for pulling data. If a consumer is slow, it doesn't slow down the producer; the data simply builds up in the Kafka buffer (on disk) until the retention period expires. This is why Kafka is the ultimate "Shock Absorber."
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="mt-12 border-t border-gray-200 py-8 bg-white">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-sm text-gray-500">&copy; 2024 TechPrep Interactive. Designed for modern engineers.</p>
+        </div>
+    </footer>
+
+    <script>
+        function showTab(tabId) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+
+            // Deactivate all buttons
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            // Show current tab content
+            document.getElementById(tabId).classList.add('active');
+
+            // Activate current button
+            document.getElementById('tab-' + tabId).classList.add('active');
+
+            // Scroll to top of main area
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleAccordion(id) {
+            const el = document.getElementById(id);
+            const icon = document.getElementById('icon-' + id);
+            
+            if (el.classList.contains('hidden')) {
+                el.classList.remove('hidden');
+                icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+            } else {
+                el.classList.add('hidden');
+                icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+            }
+        }
+    </script>
+</body>
+</html>
